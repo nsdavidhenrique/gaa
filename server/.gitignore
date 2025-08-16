@@ -1,0 +1,5 @@
+# dependencies
+venv/
+
+# Banco de dados
+*.db

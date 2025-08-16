@@ -1,0 +1,44 @@
+[
+    {
+        "id": 1,
+        "createdBy": "Vinicius",
+        "area": "GAN",
+        "description": "Fechar caixa 1 antes de sair da loja",
+        "deadline": "2025-08-13T15:30:00-03:00",
+        "target": "David",
+        "urgent": true,
+        "inProgress": true,
+        "takenBy": "Vinicius",
+        "done": false,
+        "doneIn": "aaaa-mm-ddThh:mm:ssZ",
+        "doneBy": "Vinicius"
+    },
+    {
+        "id": 2,
+        "createdBy": "Vinicius",
+        "area": "GAN",
+        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum eros augue, placerat et nisl sit amet, ultrices accumsan augue. Nulla et ex",
+        "deadline": "2025-08-14T16:30:00-03:00",
+        "target": "David",
+        "urgent": true,
+        "inProgress": false,
+        "takenBy": "David",
+        "done": false,
+        "doneIn": "aaaa-mm-ddThh:mm:ssZ",
+        "doneBy": "David"
+    },
+    {
+        "id": 3,
+        "createdBy": "Vinicius",
+        "area": "GAN",
+        "description": "Fechar caixa 3 antes de sair da loja",
+        "deadline": "2025-08-13T18:00:00-03:00",
+        "target": "Vincius",
+        "urgent": false,
+        "inProgress": false,
+        "takenBy": "Vinicius",
+        "done": true,
+        "doneIn": "aaaa-mm-ddThh:mm:ssZ",
+        "doneBy": "Vinicius"
+    }
+]
