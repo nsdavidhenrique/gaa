@@ -1,25 +1,74 @@
+import { useState, useEffect } from 'react'
+import { Text, ScrollView, Button, FlatList } from 'react-native';
+
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Text, ScrollView, Button } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 
-import { TaskProvider } from '../../context/taskContext';
-import TaskList         from '../../components/taskList'
+import { TaskListItem } from '../../components/taskListItem'
+import { HOST } from '../../utils/config'
 
 export default function Task() {
-    const router = useRouter();
-    //TODO <Suspense fallback>
+    const [loading, setLoading] = useState(false);
+    
+    const [tasks, setTasks] = useState([]);
+    const [offset, setOffset] = useState(0);
+    const [hasMoreTasks, setHasMoreTasks] = useState(true);
+
+    const fetchPending = async () => {
+        setLoading(true);
+        try{
+            const response = await fetch(`${HOST}/taskList?pending=true`);
+            const data = await response.json();
+            setTasks(() => [...data]);
+        } catch(err){
+            //TODO
+            console.error("TODO: Unable to fetch tasks:", err);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const fetchDone = async () => {
+        setLoading(true);
+        try{
+            const response = await fetch(`${HOST}/taskList?pending=false&offset=${offset}`);
+            const data = await response.json();
+            if(data.length > 0){
+                setTasks(tasks => [...tasks, ...data]);
+                setOffset(prev => prev + 1);
+            } else{
+                setHasMoreTasks(false);
+            }
+        } catch(err){
+            //TODO
+            console.error("TODO: Unable to fetch tasks:", err);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        fetchPending();
+    }, [])
 
     return (
         <>
             <Stack.Screen options={{ headerShown: false }}/>
-            <StatusBar style="auto" />
             <SafeAreaView style={{flex: 1}}>
-                <ScrollView style={{ flexGrow: 1 }}>
-                    <TaskProvider>
-                        <TaskList />
-                    </TaskProvider>
-                </ScrollView>
+                <StatusBar style="auto" />
+                <FlatList
+                    data={tasks}
+                    keyExtractor={item => item.id.toString()}
+                    renderItem={({ item }) => (
+                        <TaskListItem task={item} />
+                    )}
+                />
+                <Button
+                    title="Carregar Mais"
+                    onPress={fetchDone}
+                    disabled={!hasMoreTasks || loading}
+                />
             </SafeAreaView>
         </>
     );

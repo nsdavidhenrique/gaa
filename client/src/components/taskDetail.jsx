@@ -1,32 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react'
-import { View, ScrollView, Text, Button } from 'react-native'
-import { useSearchParams } from 'expo-router'
+import { View, ScrollView, Text } from 'react-native'
 
 import { taskStyle }    from '../styles/taskStylesheet';
-import { TaskContext, TaskProvider }  from '../context/taskContext'
 import { TaskRenderStatus } from './taskRenderStatus'
 import { isLate } from '../utils/isLate'
 
-export default function TaskDetail({ id }){
-    const { getTaskDetails } = useContext(TaskContext);
-    const [ task, setTask ] = useState(null)
-
-    useEffect(() => {
-        const fetchTaskDetails = async () => {
-            const taskDetails = await getTaskDetails(id);
-            setTask(taskDetails);
-            //TODO setLoading(false);
-        }
-
-        fetchTaskDetails()
-    }, [id, getTaskDetails])
-
-    if(!task){
-        return(
-            <Text>Not Found!</Text>
-        )
-    }
-
+export const TaskDetail = ({ task }) => {
     return(
         <>
             <ScrollView style={taskStyle.container}>
@@ -46,8 +25,11 @@ export default function TaskDetail({ id }){
                     <Text style={taskStyle.detailHeader}>Status: </Text>
                     <View style={taskStyle.detailStatusContainer}>
                         <TaskRenderStatus status={task.status} />
-                        <Text style={taskStyle.detailContent}> Por: {task.target}</Text>
+                        {task.status == "Em Andamento" ? <Text style={taskStyle.detailHeader}> Por: {task.beingDoneBy}</Text> : ""}
+                        {task.status == "Finalizado" ? <Text style={taskStyle.detailHeader}> Por: {task.doneBy}</Text> : ""}
                     </View>
+                    {task.status != "Pendente" ?   <Text style={taskStyle.detailHeader}> Iniciado em: {task.beingDoneAt}</Text> : ""}
+                    {task.status == "Finalizado" ? <Text style={taskStyle.detailHeader}> Finalizado em: {task.doneAt}</Text> : ""}
                 </View>
                 <View style={taskStyle.detailField}>
                     <Text style={taskStyle.detailHeader}>Criado por: {task.createdBy}</Text>
@@ -59,9 +41,8 @@ export default function TaskDetail({ id }){
                 </View>
                 <View style={taskStyle.detailField}>
                     <Text style={taskStyle.detailHeader}>Comentários:</Text>
-                    <Text>{}</Text>
+                    <Text>TODO!!!</Text>
                 </View>
-                <Button title="Finalizar"/>
             </ScrollView>
         </>
     )

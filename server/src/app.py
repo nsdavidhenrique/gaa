@@ -1,9 +1,14 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, Response, jsonify
+from flask_cors import CORS, cross_origin
+import json
 import os
 import sys
 import sqlite3
 
 app = Flask(__name__)
+cors = CORS(app) # allow CORS for all domains on all routes.
+app.config['CORS_HEADERS'] = 'Content-Type'
+
 db_path = "sql/database.db"
 
 def get_db():
@@ -11,6 +16,7 @@ def get_db():
     db.execute("PRAGMA foreign_keys = ON;")
     # Return fetched result as Row object, that provides index-based and name-based access.
     db.row_factory = sqlite3.Row
+    db.text_factory = lambda b: b.decode('utf-8', errors='replace')
     return db
 
 def init_db():
@@ -72,18 +78,20 @@ def get_task_details(id):
 
     query = '''
     SELECT 
-        t.id, t.description, t.deadline, t.urgent, t.createdAt, t.lastUpdate, t.doneAt, 
+        t.id, t.description, t.deadline, t.urgent, t.createdAt, t.lastUpdate, t.beingDoneAt, t.doneAt, 
         u.name AS target, 
         a.name AS area, 
         s.name AS status, 
         u2.name AS createdBy, 
-        u3.name AS beingDoneBy 
+        u3.name AS beingDoneBy,
+        u4.name AS doneBy 
     FROM Tasks AS t 
     LEFT JOIN Users AS u ON t.targetId = u.id 
     LEFT JOIN Users AS u2 ON t.createdBy = u2.id 
     LEFT JOIN Areas AS a ON t.areaId = a.id 
     LEFT JOIN TaskStatuses AS s ON t.statusId = s.id 
     LEFT JOIN Users AS u3 ON t.beingDoneBy = u3.id 
+    LEFT JOIN Users AS u4 ON t.doneBy = u4.id 
     WHERE t.id = ?;
     '''
 
@@ -161,9 +169,15 @@ def task_list_route():
 
     rows = cursor.fetchall()
     db.close()
+    data = {}
 
-    if rows: return jsonify([dict(row) for row in rows])
-    else:    return jsonify({})
+    if rows:
+        data = [dict(row) for row in rows]
+        return Response(
+            json.dumps(data, ensure_ascii=False),
+            mimetype="application/json; charset=utf-8"
+        )
+    else: return jsonify({})
 
 @app.route("/createTask", methods=['POST'])
 def create_task():
@@ -174,6 +188,9 @@ def create_task():
     targetId    = data.get("target")
     areaId      = data.get("area")
     createdBy   = data.get("createdBy")
+
+    #TODO name to ID
+
     query = '''
     INSERT INTO Tasks (description, deadline, urgent, targetId, areaId, createdBy)
     VALUES (?, ?, ?, ?, ?, ?)
