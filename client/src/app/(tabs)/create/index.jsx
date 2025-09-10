@@ -2,14 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Alert, Modal, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, ScrollView, View, Text, TextInput, Switch, StyleSheet, Button, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router';
 
 import DropDownPicker from 'react-native-dropdown-picker';
 import DateTimePickerModal from '@react-native-community/datetimepicker'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { useForm, Controller } from 'react-hook-form'
 
-import { HOST } from '../../utils/config'
-import { formStyle } from '../../styles/formStylesheet'
+import { HOST } from '../../../utils/config'
+import { getToken } from '../../../utils/jwt'
+import { formStyle } from '../../../styles/formStylesheet'
+
+const router = useRouter()
 
 export default function TaskForm() {
     const {control, handleSubmit, reset, formState: {errors} } = useForm();
@@ -24,8 +28,19 @@ export default function TaskForm() {
     const [areaOpen, setAreaOpen] = useState(false);
 
     const getUsers = async () => {
+        const token = await getToken()
+        if(!token){  
+            Alert.alert("Sessão expirou")
+            router.replace("/(auth)/login")
+        }
+
         try {
-            const response = await fetch(`${HOST}/users`);
+            const response = await fetch(`${HOST}/users`, {
+                method: 'GET',
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                }
+            });
             if(!response.ok) throw new Error(`HTTP ${response.status}`)
 
             const json = await response.json();
@@ -43,8 +58,19 @@ export default function TaskForm() {
     };
 
     const getAreas = async () => {
+        const token = await getToken()
+        if(!token){  
+            Alert.alert("Sessão expirou")
+            router.replace("/(auth)/login")
+        }
+
         try {
-            const response = await fetch(`${HOST}/areas`);
+            const response = await fetch(`${HOST}/areas`, {
+                method: 'GET',
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                }
+            });
             if(!response.ok) throw new Error(`HTTP ${response.status}`)
 
             const json = await response.json();
@@ -67,12 +93,20 @@ export default function TaskForm() {
     }, []);
 
     const postTask = async (data) => {
-        setLoading(true)
+        const token = await getToken()
+        if(!token){  
+            Alert.alert("Sessão expirou")
+            router.replace("/(auth)/login")
+        }
 
+        setLoading(true)
         try{
             const response = await fetch(`${HOST}/createTask`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: {
+                    'Content-Type': 'application/json',
+                    "Authorization": `Bearer ${token}`,
+                },
                 body: JSON.stringify(data)
             })
 

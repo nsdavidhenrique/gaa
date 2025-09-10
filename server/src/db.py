@@ -2,15 +2,9 @@ import os
 import sys
 import sqlite3
 from argon2 import PasswordHasher #TODO temp
+from datetime import datetime
 
 db_path = "sql/database.db"
-
-def get_db():
-    db = sqlite3.connect(db_path)
-    db.execute("PRAGMA foreign_keys = ON;")
-    db.row_factory = sqlite3.Row
-    db.text_factory = lambda b: b.decode('utf-8', errors='replace')
-    return db
 
 def init_db(app):
     if not os.path.exists("sql/database.db"):
@@ -18,17 +12,26 @@ def init_db(app):
             db = get_db()
             with app.open_resource("../sql/schema.sql", "r") as f:
                 db.cursor().executescript(f.read())
-            db.commit()
+                db.commit()
             try:
                 with app.open_resource("../sql/default_entries.sql", "r") as f:
                     db.cursor().executescript(f.read())
                     db.commit()
                 register_users('admin', '123') #TODO temp
+                register_users('admin2', '123') #TODO temp
+                create_task('description', "2025-08-15T14:30-03:00", True, 1, 1, 1)
             except Exception as e:
                 db.close()
                 sys.stderr.write(f"Error on inserting default_entries: {e}\n")
                 os.remove(db_path)
                 exit(1)
+
+def get_db():
+    db = sqlite3.connect(db_path)
+    db.execute("PRAGMA foreign_keys = ON;")
+    db.row_factory = sqlite3.Row
+    db.text_factory = lambda b: b.decode('utf-8', errors='replace')
+    return db
 
 def register_users(name, password): #TODO temp
     ph = PasswordHasher()
@@ -99,12 +102,12 @@ def get_task_details(id):
 
     query = '''
     SELECT 
-        t.id, t.description, t.deadline, t.urgent, t.createdAt, t.lastUpdate, t.beingDoneAt, t.doneAt, 
+        t.id, t.description, t.deadline, t.urgent, t.createdAt, t.lastUpdate, t.updatedBy, t.doneAt, 
         u.name AS target, 
         a.name AS area, 
         s.name AS status, 
         u2.name AS createdBy, 
-        u3.name AS beingDoneBy,
+        u3.name AS updatedBy,
         u4.name AS doneBy 
     FROM Tasks AS t 
     LEFT JOIN Users AS u ON t.targetId = u.id 
@@ -146,6 +149,7 @@ def get_task_list(pending = None, offset = None):
     db.close()
     
     if rows: return [dict(row) for row in rows], 200
+    return [], 200
 
 def create_task(description, deadline, urgent, targetId, areaId, createdBy):
     db = get_db()
@@ -164,7 +168,7 @@ def create_task(description, deadline, urgent, targetId, areaId, createdBy):
     finally: db.close()
     return "", 201
 
-def update_task_status(id, newStatus):
+def update_task_status(id, newStatus, user):
     taskStatus = newStatus
     if not taskStatus.isdigit():
         taskStatus, status = get_status(name = newStatus)
@@ -174,12 +178,13 @@ def update_task_status(id, newStatus):
 
     db     = get_db()
     cursor = db.cursor()
-    query  = "UPDATE Tasks SET statusId = ? WHERE id = ?;"
+    query  = "UPDATE Tasks SET statusId = ?, updatedBy = ?, lastUpdate = ? WHERE id = ?;"
 
     try:
-        cursor.execute(query, (id, taskStatus,))
+        cursor.execute(query, (id, user, datetime.now().isoformat(), taskStatus,))
         db.commit()
     except Exception as e:
+        print(e)
         return f"Failed to update tasks: {e}", 500
     finally: db.close()
 

@@ -1,21 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { Stack, useLocalSearchParams } from 'expo-router'
-import { Text, View, Button } from 'react-native';
+import { Alert, Text, View, Button } from 'react-native';
+import { useRouter } from 'expo-router'
 
-import { HOST } from '../../utils/config'
-import { TaskDetail } from '../../components/taskDetail';
+import { HOST } from '../../../utils/config'
+import { TaskDetail } from '../../../components/taskDetail';
+import { getToken } from '../../../utils/jwt'
+
+const router = useRouter()
 
 // TODO update status on react
-
 export default function TaskDetailScreen() {
     const { id } = useLocalSearchParams();
     const [loading, setLoading] = useState(true)
     const [task, setTask] = useState(null)
 
     const fetchTask = async () => {
+        const token = await getToken()
+        if(!token){  
+            Alert.alert("Sessão expirou")
+            router.replace("/(auth)/login")
+        }
         setLoading(true);
         try{
-            const response = await fetch(`${HOST}/task?id=${id}`);
+            const response = await fetch(`${HOST}/task?id=${id}`, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                }
+            });
             if(!response.ok) throw new Error(`HTTP ${response.status}`)
 
             const json = await response.json();
@@ -29,11 +42,20 @@ export default function TaskDetailScreen() {
     }
 
     const updateTaskStatus = async (newStatus) => {
+        const token = await getToken()
+        if(!token){  
+            Alert.alert("Sessão expirou")
+            router.replace("/(auth)/login")
+        }
+
         setLoading(true);
         try {
             const response = await fetch(`${HOST}/task?id=${id}`, {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
                 body: JSON.stringify({status: newStatus}) // TODO by
             });
 

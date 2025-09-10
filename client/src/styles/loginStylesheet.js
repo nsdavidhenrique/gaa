@@ -5,6 +5,7 @@ const loginStyle = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        backgroundColor: '#FFF'
     },
     field: {
         marginBottom: 6,

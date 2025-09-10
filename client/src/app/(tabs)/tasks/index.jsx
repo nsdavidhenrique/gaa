@@ -5,8 +5,11 @@ import { StatusBar } from 'expo-status-bar'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Stack, useRouter } from 'expo-router';
 
-import { TaskListItem } from '../../components/taskListItem'
-import { HOST } from '../../utils/config'
+import { TaskListItem } from '../../../components/taskListItem'
+import { HOST } from '../../../utils/config'
+import { getToken } from '../../../utils/jwt'
+
+const router = useRouter()
 
 export default function Task() {
     const [loading, setLoading] = useState(false);
@@ -17,9 +20,20 @@ export default function Task() {
     const [hasMoreTasks, setHasMoreTasks] = useState(true);
 
     const fetchPending = async () => {
+        const token = await getToken()
+        if(!token){  
+            Alert.alert("Sessão expirou")
+            router.replace("/(auth)/login")
+        }
+
         setLoading(true);
         try{
-            const response = await fetch(`${HOST}/taskList?pending=true`);
+            const response = await fetch(`${HOST}/taskList?pending=true`, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                }
+            });
             if(!response.ok) throw new Error(`HTTP ${response.status}`)
 
             const json = await response.json();
@@ -34,9 +48,20 @@ export default function Task() {
 
     const fetchDone = async () => {
         if(!hasMoreTasks) return
+
+        const token = await getToken()
+        if(!token){
+            console.erro("TODO usuário não autorizado")
+        }
+
         setLoading(true);
         try{
-            const response = await fetch(`${HOST}/taskList?pending=false&offset=${offset}`);
+            const response = await fetch(`${HOST}/taskList?pending=false&offset=${offset}`, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                }
+            });
             if(!response.ok) throw new Error(`HTTP ${response.status}`)
 
             const json = await response.json();
@@ -82,7 +107,7 @@ export default function Task() {
                 />
                 <Button
                     title="Carregar mais"
-                    disable={!hasMoreTasks || loading}
+                    disabled={!hasMoreTasks || loading}
                     onPress={fetchDone}
                 />
             </SafeAreaView>

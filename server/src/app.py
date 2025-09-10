@@ -83,8 +83,7 @@ def get_task_route():
 @app.route("/task", methods=['PATCH'])
 @jwt_required()
 def update_task_route():
-    #current_user = get_jwt_identity()
-     
+    current_user = get_jwt_identity()
     params = request.args.to_dict()
     data = request.json
 
@@ -94,7 +93,7 @@ def update_task_route():
     if not data.get('status'):
         return jsonify({"success": False, "error": "Invalide or missing status"}), 400
 
-    data, status =  update_task_status(parasm['id'], params['status'])
+    data, status =  update_task_status(id=params['id'], newStatus=data['status'], user=current_user)
 
     if status == 204: return "", status
     else:             return jsonify({"success": False, "error": data}), status
