@@ -5,58 +5,56 @@ import { Text, View, Button } from 'react-native';
 import { HOST } from '../../utils/config'
 import { TaskDetail } from '../../components/taskDetail';
 
+// TODO update status on react
+
 export default function TaskDetailScreen() {
     const { id } = useLocalSearchParams();
     const [loading, setLoading] = useState(true)
     const [task, setTask] = useState(null)
 
-    const fetchTaskDetails = async () => {
+    const fetchTask = async () => {
         setLoading(true);
         try{
-            const response = await fetch(`${HOST}/taskDetails?id=${id}`);
-            const data = await response.json();
-            //TODO handle empty object
-            setTask(data);
-        } catch{
+            const response = await fetch(`${HOST}/task?id=${id}`);
+            if(!response.ok) throw new Error(`HTTP ${response.status}`)
+
+            const json = await response.json();
+            setTask(json.data);
+        } catch(error){
             // TODO
-            console.log("TODO unable to fetch task detail")
+            console.error("TODO unable to fetch task detail:", error)
         } finally{
             setLoading(false);
         }
     }
 
     const updateTaskStatus = async (newStatus) => {
-        console.log(`TODO updateTaskStatus(${newStatus})`)
-        //setLoading(true);
-        //try {
-        //    const response = await fetch(`${HOST}/updateTask`, {
-        //        method: "POST",
-        //        headers: { "Content-Type": "application/json" },
-        //        body: JSON.stringify({ id: id, status: newStatus, TODO: BY })
-        //    });
-        //    const data = await response.json();
+        setLoading(true);
+        try {
+            const response = await fetch(`${HOST}/task?id=${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({status: newStatus}) // TODO by
+            });
 
-        //    if (data.success) {
-        //        setTask(prev => ({ ...prev, status: newStatus }));
-        //    } else {
-        //        console.error("TODO: Falha ao atualizar task:", data.error);
-        //    }
-        //} catch (err) {
-        //    console.error("TODO: Erro ao atualizar task:", err);
-        //} finally {
-        //    setLoading(false);
-        //}
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            // TODO response.status != 204
+            setTask(prev => ({...prev, status: newStatus}))
+        } catch (error) {
+            console.error("TODO: Failed to update task:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
-        fetchTaskDetails()
+        fetchTask()
     }, [id])
 
     // TODO
     if(loading) return(<Text>Carregando...</Text>)
     // TODO
     if(!task) return(<Text>Não encontrado!</Text>)
-    
 
     return (
         <>

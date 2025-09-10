@@ -1,6 +1,7 @@
 CREATE TABLE Users(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR(255) NOT NULL
+    name VARCHAR(255) NOT NULL,
+    password_hash VARCHAR -- TODO not null
 );
 
 CREATE TABLE Areas(

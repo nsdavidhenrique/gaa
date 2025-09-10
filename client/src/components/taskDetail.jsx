@@ -15,7 +15,7 @@ export const TaskDetail = ({ task }) => {
                 </View>
                 <View style={taskStyle.detailField}>
                     <Text style={taskStyle.detailHeader}>Responsável:</Text>
-                    <Text style={taskStyle.detailContent}>{task.target}</Text>
+                    <Text style={taskStyle.detailContent}>{task.target ? task.target: 'Todos'}</Text>
                 </View>
                 <View style={taskStyle.detailField}>
                     <Text style={taskStyle.detailHeader}>Descrição:</Text>

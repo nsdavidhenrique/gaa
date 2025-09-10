@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Text, ScrollView, Button, FlatList } from 'react-native';
+import { Text, View, ScrollView, Button, FlatList, RefreshControl } from 'react-native';
 
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -10,6 +10,7 @@ import { HOST } from '../../utils/config'
 
 export default function Task() {
     const [loading, setLoading] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
     
     const [tasks, setTasks] = useState([]);
     const [offset, setOffset] = useState(0);
@@ -19,8 +20,10 @@ export default function Task() {
         setLoading(true);
         try{
             const response = await fetch(`${HOST}/taskList?pending=true`);
-            const data = await response.json();
-            setTasks(() => [...data]);
+            if(!response.ok) throw new Error(`HTTP ${response.status}`)
+
+            const json = await response.json();
+            setTasks(() => [...json.data]);
         } catch(err){
             //TODO
             console.error("TODO: Unable to fetch tasks:", err);
@@ -30,23 +33,31 @@ export default function Task() {
     }
 
     const fetchDone = async () => {
+        if(!hasMoreTasks) return
         setLoading(true);
         try{
             const response = await fetch(`${HOST}/taskList?pending=false&offset=${offset}`);
-            const data = await response.json();
-            if(data.length > 0){
-                setTasks(tasks => [...tasks, ...data]);
-                setOffset(prev => prev + 1);
-            } else{
-                setHasMoreTasks(false);
-            }
-        } catch(err){
-            //TODO
-            console.error("TODO: Unable to fetch tasks:", err);
+            if(!response.ok) throw new Error(`HTTP ${response.status}`)
+
+            const json = await response.json();
+            if(json.data.length < 5) setHasMoreTasks(false)
+
+            setTasks(tasks => [...tasks, ...json.data]);
+            setOffset(prev => prev + 1);
+        } catch(error){
+            console.error("TODO: Unable to fetch done tasks:", error);
         } finally {
             setLoading(false);
         }
     }
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        setOffset(0);
+        setHasMoreTasks(true);
+        await fetchPending();
+        setRefreshing(false);
+    };
 
     useEffect(() => {
         fetchPending();
@@ -63,11 +74,16 @@ export default function Task() {
                     renderItem={({ item }) => (
                         <TaskListItem task={item} />
                     )}
+                    ListEmptyComponent={() => (
+                        <View style={{ padding: 20, alignItems: 'center' }}>
+                            <Text>Nenhuma tarefa encontrada.</Text>
+                        </View>
+                    )}
                 />
                 <Button
-                    title="Carregar Mais"
+                    title="Carregar mais"
+                    disable={!hasMoreTasks || loading}
                     onPress={fetchDone}
-                    disabled={!hasMoreTasks || loading}
                 />
             </SafeAreaView>
         </>
