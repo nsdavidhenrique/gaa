@@ -102,20 +102,18 @@ def get_task_details(id):
 
     query = '''
     SELECT 
-        t.id, t.description, t.deadline, t.urgent, t.createdAt, t.lastUpdate, t.updatedBy, t.doneAt, 
-        u.name AS target, 
+        t.id, t.description, t.deadline, t.urgent, t.createdAt, t.lastUpdate,
         a.name AS area, 
+        u.name AS target, 
         s.name AS status, 
         u2.name AS createdBy, 
-        u3.name AS updatedBy,
-        u4.name AS doneBy 
+        u3.name AS updatedBy
     FROM Tasks AS t 
     LEFT JOIN Users AS u ON t.targetId = u.id 
     LEFT JOIN Users AS u2 ON t.createdBy = u2.id 
     LEFT JOIN Areas AS a ON t.areaId = a.id 
     LEFT JOIN TaskStatuses AS s ON t.statusId = s.id 
-    LEFT JOIN Users AS u3 ON t.beingDoneBy = u3.id 
-    LEFT JOIN Users AS u4 ON t.doneBy = u4.id 
+    LEFT JOIN Users AS u3 ON t.updatedBy = u3.id 
     WHERE t.id = ?;
     '''
 
@@ -178,13 +176,13 @@ def update_task_status(id, newStatus, user):
 
     db     = get_db()
     cursor = db.cursor()
-    query  = "UPDATE Tasks SET statusId = ?, updatedBy = ?, lastUpdate = ? WHERE id = ?;"
+    query  = "UPDATE Tasks SET statusId = ?, updatedBy = ? WHERE id = ?;"
 
     try:
-        cursor.execute(query, (id, user, datetime.now().isoformat(), taskStatus,))
+        print(id, taskStatus, user)
+        cursor.execute(query, (taskStatus, user, id,))
         db.commit()
     except Exception as e:
-        print(e)
         return f"Failed to update tasks: {e}", 500
     finally: db.close()
 

@@ -1,7 +1,7 @@
 CREATE TABLE Users(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(255) NOT NULL,
-    password_hash VARCHAR -- TODO not null
+    password_hash VARCHAR NOT NULL
 );
 
 CREATE TABLE Areas(
@@ -19,14 +19,13 @@ CREATE TABLE Tasks(
     description VARCHAR NOT NULL,
     deadline    DATETIME NOT NULL,
     urgent      BOOLEAN DEFAULT FALSE NOT NULL,
-    createdAt   DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    lastUpdate  DATETIME DEFAULT NULL, -- TODO trigger on update, CURRENT_TIMESTAMP
-    doneAt      DATETIME DEFAULT NULL, -- TODO trigger on statusId update to 3, CURRENT_TIMESTAMP
+    createdAt   TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')) NOT NULL,
+    lastUpdate  TEXT DEFAULT NULL, -- TODO trigger on update, CURRENT_TIMESTAMP
     targetId    INTEGER DEFAULT NULL, -- if null, target is all
     areaId      INTEGER NOT NULL,
     statusId    INTEGER DEFAULT 1 NOT NULL,
     createdBy   INTEGER NOT NULL,
-    updatedBy INTEGER DEFAULT NULL,
+    updatedBy   INTEGER DEFAULT NULL,
 
     FOREIGN KEY (targetId) REFERENCES Users(id),
     FOREIGN KEY (areaId) REFERENCES Areas(id),
@@ -35,4 +34,11 @@ CREATE TABLE Tasks(
     FOREIGN KEY (updatedBy) REFERENCES Users(id)
 );
 
--- TODO triggers
+CREATE TRIGGER set_lastUpdate_on_status_change
+AFTER UPDATE OF statusId ON Tasks
+FOR EACH ROW
+BEGIN
+    UPDATE Tasks
+    SET lastUpdate = strftime('%Y-%m-%dT%H:%M:%SZ', CURRENT_TIMESTAMP)
+    WHERE id = NEW.id;
+END;

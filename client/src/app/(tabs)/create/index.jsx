@@ -1,37 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { Alert, Modal, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, ScrollView, View, Text, TextInput, Switch, StyleSheet, Button, Platform } from 'react-native';
-import { StatusBar } from 'expo-status-bar'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router';
-
-import DropDownPicker from 'react-native-dropdown-picker';
-import DateTimePickerModal from '@react-native-community/datetimepicker'
-import DateTimePicker from '@react-native-community/datetimepicker'
+import { useState, useEffect } from 'react';
+import {
+    Alert,
+    Modal,
+    TouchableWithoutFeedback,
+    Keyboard,
+    KeyboardAvoidingView,
+    ScrollView,
+    View,
+    Text,
+    TextInput,
+    Switch,
+    StyleSheet,
+    Button,
+    Platform }                 from 'react-native';
+import { StatusBar }           from 'expo-status-bar'
+import { SafeAreaView }        from 'react-native-safe-area-context'
+import { useRouter }           from 'expo-router'
+import DropDownPicker          from 'react-native-dropdown-picker';
+import DateTimePickerModal     from '@react-native-community/datetimepicker'
+import DateTimePicker          from '@react-native-community/datetimepicker'
 import { useForm, Controller } from 'react-hook-form'
 
-import { HOST } from '../../../utils/config'
-import { getToken } from '../../../utils/jwt'
-import { formStyle } from '../../../styles/formStylesheet'
-
-const router = useRouter()
+import { HOST }                 from '../../../utils/config'
+import { getToken }             from '../../../utils/jwt'
+import { formStyle }            from '../../../styles/formStylesheet'
+import { handleSessionExpired } from '../../../utils/handleSessionExpired'
 
 export default function TaskForm() {
-    const {control, handleSubmit, reset, formState: {errors} } = useForm();
-    const [loading, setLoading] = useState(false);
-
+    const [loading, setLoading]       = useState(false);
     const [showPicker, setShowPicker] = useState(false);
-    const [tempDate, setTempDate] = useState(new Date()); // data temporária
-
-    const [users, setUsers] = useState([]);
-    const [userOpen, setUserOpen] = useState(false);
-    const [areas, setAreas] = useState([]);
-    const [areaOpen, setAreaOpen] = useState(false);
+    const [tempDate, setTempDate]     = useState(new Date());
+    const [users, setUsers]           = useState([]);
+    const [userOpen, setUserOpen]     = useState(false);
+    const [areas, setAreas]           = useState([]);
+    const [areaOpen, setAreaOpen]     = useState(false);
+    const {control, handleSubmit, reset, formState: {errors} } = useForm();
 
     const getUsers = async () => {
-        const token = await getToken()
-        if(!token){  
-            Alert.alert("Sessão expirou")
-            router.replace("/(auth)/login")
+        const router = useRouter()
+        const token  = await getToken()
+        if(!token){
+            handleSessionExpired(router)  
+            return
         }
 
         try {
@@ -58,10 +68,11 @@ export default function TaskForm() {
     };
 
     const getAreas = async () => {
-        const token = await getToken()
-        if(!token){  
-            Alert.alert("Sessão expirou")
-            router.replace("/(auth)/login")
+        const router = useRouter()
+        const token  = await getToken()
+        if(!token){
+            handleSessionExpired(router)  
+            return
         }
 
         try {
@@ -93,10 +104,11 @@ export default function TaskForm() {
     }, []);
 
     const postTask = async (data) => {
-        const token = await getToken()
-        if(!token){  
-            Alert.alert("Sessão expirou")
-            router.replace("/(auth)/login")
+        const router = useRouter()
+        const token  = await getToken()
+        if(!token){
+            handleSessionExpired(router)  
+            return
         }
 
         setLoading(true)

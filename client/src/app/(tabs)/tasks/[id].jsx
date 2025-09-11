@@ -1,27 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect }  from 'react';
 import { Stack, useLocalSearchParams } from 'expo-router'
-import { Alert, Text, View, Button } from 'react-native';
-import { useRouter } from 'expo-router'
+import { Alert, Text, View, Button }   from 'react-native';
+import { useRouter }                   from 'expo-router'
 
-import { HOST } from '../../../utils/config'
-import { TaskDetail } from '../../../components/taskDetail';
-import { getToken } from '../../../utils/jwt'
+import { HOST }                 from '../../../utils/config'
+import { getToken }             from '../../../utils/jwt'
+import { handleSessionExpired } from '../../../utils/handleSessionExpired'
+import { TaskDetail }           from '../../../components/taskDetail';
 
-const router = useRouter()
-
-// TODO update status on react
 export default function TaskDetailScreen() {
-    const { id } = useLocalSearchParams();
+    const { id }                = useLocalSearchParams();
     const [loading, setLoading] = useState(true)
-    const [task, setTask] = useState(null)
+    const [task, setTask]       = useState(null)
 
     const fetchTask = async () => {
-        const token = await getToken()
-        if(!token){  
-            Alert.alert("Sessão expirou")
-            router.replace("/(auth)/login")
-        }
         setLoading(true);
+
+        const router = useRouter()
+        const token  = await getToken()
+        if(!token){
+            handleSessionExpired(router)  
+            return
+        }
+
         try{
             const response = await fetch(`${HOST}/task?id=${id}`, {
                 method: "GET",
@@ -42,13 +43,15 @@ export default function TaskDetailScreen() {
     }
 
     const updateTaskStatus = async (newStatus) => {
-        const token = await getToken()
-        if(!token){  
-            Alert.alert("Sessão expirou")
-            router.replace("/(auth)/login")
+        setLoading(true);
+
+        const router = useRouter()
+        const token  = await getToken()
+        if(!token){
+            handleSessionExpired(router)  
+            return
         }
 
-        setLoading(true);
         try {
             const response = await fetch(`${HOST}/task?id=${id}`, {
                 method: "PATCH",
@@ -61,7 +64,7 @@ export default function TaskDetailScreen() {
 
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             // TODO response.status != 204
-            setTask(prev => ({...prev, status: newStatus}))
+            setTask(prev => ({...prev, status: newStatus})) // TODO por, iniciado em
         } catch (error) {
             console.error("TODO: Failed to update task:", error);
         } finally {
@@ -75,7 +78,6 @@ export default function TaskDetailScreen() {
 
     // TODO
     if(loading) return(<Text>Carregando...</Text>)
-    // TODO
     if(!task) return(<Text>Não encontrado!</Text>)
 
     return (

@@ -1,6 +1,8 @@
 # dependencies
 venv/
-*__pycache__*
 
 # Banco de dados
 *.db
+
+__pycache__/
+*.pyc

@@ -4,6 +4,7 @@ import { View, ScrollView, Text } from 'react-native'
 import { taskStyle }    from '../styles/taskStylesheet';
 import { TaskRenderStatus } from './taskRenderStatus'
 import { isLate } from '../utils/isLate'
+import { brDateTime } from '../utils/brDateTime'
 
 export const TaskDetail = ({ task }) => {
     return(
@@ -25,15 +26,23 @@ export const TaskDetail = ({ task }) => {
                     <Text style={taskStyle.detailHeader}>Status: </Text>
                     <View style={taskStyle.detailStatusContainer}>
                         <TaskRenderStatus status={task.status} />
-                        {task.status == "Em Andamento" ? <Text style={taskStyle.detailHeader}> Por: {task.beingDoneBy}</Text> : ""}
-                        {task.status == "Finalizado" ? <Text style={taskStyle.detailHeader}> Por: {task.doneBy}</Text> : ""}
+                        {task.status == "Em Andamento" ? <Text style={taskStyle.detailHeader}> Por: {task.updatedBy}</Text> : ""}
+                        {task.status == "Finalizado" ?   <Text style={taskStyle.detailHeader}> Por: {task.updatedBy}</Text> : ""}
                     </View>
-                    {task.status != "Pendente" ?   <Text style={taskStyle.detailHeader}> Iniciado em: {task.beingDoneAt}</Text> : ""}
-                    {task.status == "Finalizado" ? <Text style={taskStyle.detailHeader}> Finalizado em: {task.doneAt}</Text> : ""}
+                    {
+                        task.status == "Em Andamento" ?
+                        <Text style={taskStyle.detailHeader}> Iniciado em:   {brDateTime(task.lastUpdate)}</Text> :
+                        ""
+                    }
+                    {
+                        task.status == "Finalizado" ?
+                        <Text style={taskStyle.detailHeader}> Finalizado em: {brDateTime(task.lastUpdate)}</Text> :
+                        ""
+                    }
                 </View>
                 <View style={taskStyle.detailField}>
                     <Text style={taskStyle.detailHeader}>Criado por: {task.createdBy}</Text>
-                    <Text style={taskStyle.detailHeader}>Em: {(new Date(task.createdAt)).toLocaleString("pt-BR")}</Text>
+                    <Text style={taskStyle.detailHeader}>Em: {brDateTime(task.createdAt)}</Text>
                     <Text style={taskStyle.detailHeader}>
                         Prazo: {(new Date(task.deadline)).toLocaleString("pt-BR")}
                         {isLate(task.deadline) && <Text style={taskStyle.detailLate}> Atrasado!</Text>}

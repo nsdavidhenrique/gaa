@@ -5,11 +5,10 @@ import { StatusBar } from 'expo-status-bar'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Stack, useRouter } from 'expo-router';
 
-import { TaskListItem } from '../../../components/taskListItem'
-import { HOST } from '../../../utils/config'
-import { getToken } from '../../../utils/jwt'
-
-const router = useRouter()
+import { HOST }                 from '../../../utils/config'
+import { getToken }             from '../../../utils/jwt'
+import { handleSessionExpired } from '../../../utils/handleSessionExpired'
+import { TaskListItem }         from '../../../components/taskListItem'
 
 export default function Task() {
     const [loading, setLoading] = useState(false);
@@ -20,13 +19,15 @@ export default function Task() {
     const [hasMoreTasks, setHasMoreTasks] = useState(true);
 
     const fetchPending = async () => {
+        setLoading(true);
+
+        const router = useRouter()
         const token = await getToken()
-        if(!token){  
-            Alert.alert("Sessão expirou")
-            router.replace("/(auth)/login")
+        if(!token){
+            handleSessionExpired(router)  
+            return
         }
 
-        setLoading(true);
         try{
             const response = await fetch(`${HOST}/taskList?pending=true`, {
                 method: "GET",
@@ -48,13 +49,12 @@ export default function Task() {
 
     const fetchDone = async () => {
         if(!hasMoreTasks) return
-
-        const token = await getToken()
-        if(!token){
-            console.erro("TODO usuário não autorizado")
-        }
-
         setLoading(true);
+
+        const router = useRouter()
+        const token = await getToken()
+        if(!token) handleSessionExpired(router)  
+
         try{
             const response = await fetch(`${HOST}/taskList?pending=false&offset=${offset}`, {
                 method: "GET",
@@ -104,6 +104,8 @@ export default function Task() {
                             <Text>Nenhuma tarefa encontrada.</Text>
                         </View>
                     )}
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
                 />
                 <Button
                     title="Carregar mais"
