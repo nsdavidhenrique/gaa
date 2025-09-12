@@ -9,61 +9,60 @@ from db import *
 
 #TODO add edit and delete tasks, and register
 
-app = Flask(__name__)
+app  = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.config["JWT_SECRET_KEY"] = "foo-bar" # TODO search for best practices to define this key
 
 jwt = JWTManager(app)
-ph = PasswordHasher()
+ph  = PasswordHasher()
 
 @app.route("/login", methods={"POST"})
 def login():
-    name = request.json.get("username", None)
+    name     = request.json.get("username", None)
     password = request.json.get("password", None)
 
     user, status = get_user_and_password(name=name)
-    if   status == 400: return jsonify({"success": False, "error": "Bad request"}), status
-    elif status == 404: return jsonify({"success": False, "error": "Unauthorized"}), 401    
+    if status == 404: return jsonify({"success": False, "data": "Denied"}), 401    
 
     try:
         ph.verify(user["password_hash"], password)
         access_token = create_access_token(identity=name)
-        return jsonify({"success": True, "data": access_token}), status
+        return jsonify({"success": True, "data": access_token}), 200
     except VerifyMismatchError:
-        return jsonify({"success": False, "error": "Unauthorized"}), 401    
+        return jsonify({"success": False, "data": "Denied"}), 401    
 
 @app.route("/users", methods=['GET'])
 @jwt_required()
 def users_route():
-    params = request.args.to_dict()
-    id_param = params.get("id")
-    name_param = params.get("name")
+    params    = request.args.to_dict()
+    idParam   = params.get("id")
+    nameParam = params.get("name")
 
-    #TODO sanitize  paramters
-    if id_param:     data, status = get_users(id=id_param)
-    elif name_param: data, status = get_users(name=name_param)
-    else:            data, status = get_users()
+    if idParam:     data, status = get_users(id=idParam)
+    elif nameParam: data, status = get_users(name=nameParam)
+    else:           data, status = get_users()
 
-    if   status == 200: return jsonify({"success": True,  "data": data}), status
-    elif status == 404: return jsonify({"success": False, "error": "User not found"}), status
-    else:               return jsonify({"success": False, "error": "Invalid request"}), status
+    if   status == 200: return jsonify({"success": True,  "data": data}), 200
+    elif status == 404: return jsonify({"success": False, "data": "User not found"}), 404
+    # UNREACHABLE
+    else:               return jsonify({"success": False, "data": "Invalid request"}), 400
 
 @app.route("/areas")
 @jwt_required()
 def areas_route():
-    params = request.args.to_dict()
-    id_param = params.get("id")
-    name_param = params.get("name")
+    params    = request.args.to_dict()
+    idParam   = params.get("id")
+    nameParam = params.get("name")
 
-    #TODO sanitize  paramters
-    if id_param:     data, status = get_areas(id=id_param)
-    elif name_param: data, status = get_areas(name=name_param)
-    else:            data, status = get_areas()
+    if idParam:     data, status = get_areas(id=idParam)
+    elif nameParam: data, status = get_areas(name=nameParam)
+    else:           data, status = get_areas()
 
-    if   status == 200: return jsonify({"success": True,  "data": data}), status
-    elif status == 404: return jsonify({"success": False, "error": "Area not found"}), status
-    else:               return jsonify({"success": False, "error": "Invalid request"}), status
+    if   status == 200: return jsonify({"success": True,  "data": data}), 200
+    elif status == 404: return jsonify({"success": False, "data": "Area not found"}), 404
+    # UNREACHEABLE
+    else:               return jsonify({"success": False, "data": "Invalid request"}), 400
 
 @app.route("/task", methods=['GET'])
 @jwt_required()
@@ -71,35 +70,40 @@ def get_task_route():
     params = request.args.to_dict()
 
     if "id" not in params or not params["id"].isdigit():
-        return jsonify({"success": False, "error": "Invalid or missing Task ID"}), 400
+        return jsonify({"success": False, "data": "Invalid or missing Task ID"}), 400
 
     data, status = get_task_details(params['id'])
 
-    if   status == 200: return jsonify({"success": True,  "data": data}), status
-    elif status == 404: return jsonify({"success": False, "error": "Not Found"}), status
-    else:               return jsonify({"success": False, "error": "Invalid request"}), status
+    if   status == 200: return jsonify({"success": True,  "data": data}), 200
+    elif status == 404: return jsonify({"success": False, "data": "Not Found"}), 404
+    elif status == 400: return jsonify({"success": False, "data": "Bad request"}), 400
+    # UNREACHABLE
+    else:               return jsonify({"success": False, "data": "Invalid request"}), 400
 
 
 @app.route("/task", methods=['PATCH'])
 @jwt_required()
 def update_task_route():
     currentUser = get_jwt_identity()
-    params = request.args.to_dict()
-    data = request.json
+    params      = request.args.to_dict()
+    data        = request.json
 
-    if "id" not in params or not params["id"].isdigit():
-        return jsonify({"success": False, "error": "Invalide or missing Task ID"}), 400
+    if not data.get('id') or not params["id"].isdigit():
+        return jsonify({"success": False, "data": "Invalide or missing Task ID"}), 400
 
     if not data.get('status'):
-        return jsonify({"success": False, "error": "Invalide or missing status"}), 400
+        return jsonify({"success": False, "data": "Invalide or missing status"}), 400
 
     user, status = get_users(name=currentUser)
-    #TODO
-    if status != 200: return "", 500
+    if status != 200: return "", 401
 
-    data, status =  update_task_status(id=params['id'], newStatus=data['status'], user=user[0]['id'])
+    stat, success = get_status(name=data["status"])
+    if status != 200: return "", 400
 
-    if status == 204: return "", status
+    data, status = update_task_status(id=params['id'], statusId=stat[0]['id'], userId=user[0]['id'])
+
+    if   status == 204: return "", 204
+    elif status == 500: return jsonifu(), 500
     else:             return jsonify({"success": False, "error": data}), status
 
 @app.route("/taskList", methods=['GET'])

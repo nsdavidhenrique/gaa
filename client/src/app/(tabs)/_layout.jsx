@@ -7,7 +7,7 @@ export default function TabLayout() {
         <Tabs screenOptions={{ tabBarShowLabel: true, headerShown: false }}>
             <Tabs.Screen name="tasks" options={{ title: "Tarefas" }} />
             <Tabs.Screen name="create" options={{ title: "Criar" }} />
-            <Tabs.Screen name="analise" options={{ title: "Ánalise" }} />
+            <Tabs.Screen name="settings" options={{ title: "Configuração" }} />
         </Tabs>
     );
 }

@@ -20,7 +20,7 @@ CREATE TABLE Tasks(
     deadline    DATETIME NOT NULL,
     urgent      BOOLEAN DEFAULT FALSE NOT NULL,
     createdAt   TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')) NOT NULL,
-    lastUpdate  TEXT DEFAULT NULL, -- TODO trigger on update, CURRENT_TIMESTAMP
+    lastUpdate  TEXT DEFAULT NULL,
     targetId    INTEGER DEFAULT NULL, -- if null, target is all
     areaId      INTEGER NOT NULL,
     statusId    INTEGER DEFAULT 1 NOT NULL,
@@ -33,6 +33,17 @@ CREATE TABLE Tasks(
     FOREIGN KEY (createdBy) REFERENCES Users(id),
     FOREIGN KEY (updatedBy) REFERENCES Users(id)
 );
+
+CREATE TABLE Comments(
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    createdAt TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M%SZ', 'now')) NOT NULL,
+    content   TEXT NOT NULL, -- TODO BETTER NAME
+    taskId    INTEGER NOT NULL,
+    userId    INTEGER NOT NULL,
+
+    FOREIGN KEY (taskId) REFERENCES Tasks(id),
+    FOREIGN KEY (userId) REFERENCES Users(id)
+)
 
 CREATE TRIGGER set_lastUpdate_on_status_change
 AFTER UPDATE OF statusId ON Tasks

@@ -4,6 +4,8 @@ import sqlite3
 from argon2 import PasswordHasher #TODO temp
 from datetime import datetime
 
+# TODO instead of open db connection every time, use context, g
+
 db_path = "sql/database.db"
 
 def init_db(app):
@@ -65,7 +67,7 @@ def get_users(id = None, name = None):
     rows = cursor.fetchall()
     db.close()
 
-    if (id is not None or name is not None) and not rows: return [], 404 
+    if (id is not None or name is not None) and not rows: return None, 404 
     else:                                                 return [dict(row) for row in rows], 200
 
 def get_areas(id = None, name = None):
@@ -79,7 +81,7 @@ def get_areas(id = None, name = None):
     rows = cursor.fetchall()
     db.close()
 
-    if (id is not None or name is not None) and not rows: return [], 404 
+    if (id is not None or name is not None) and not rows: return None, 404 
     else:                                                 return [dict(row) for row in rows], 200
 
 def get_status(id = None, name = None):
@@ -93,36 +95,8 @@ def get_status(id = None, name = None):
     rows = cursor.fetchall()
     db.close()
 
-    if (id is not None or name is not None) and not rows: return [], 404 
+    if (id is not None or name is not None) and not rows: return None, 404 
     else:                                                 return [dict(row) for row in rows], 200
-
-def get_task_details(id):
-    db = get_db()
-    cursor = db.cursor()
-
-    query = '''
-    SELECT 
-        t.id, t.description, t.deadline, t.urgent, t.createdAt, t.lastUpdate,
-        a.name AS area, 
-        u.name AS target, 
-        s.name AS status, 
-        u2.name AS createdBy, 
-        u3.name AS updatedBy
-    FROM Tasks AS t 
-    LEFT JOIN Users AS u ON t.targetId = u.id 
-    LEFT JOIN Users AS u2 ON t.createdBy = u2.id 
-    LEFT JOIN Areas AS a ON t.areaId = a.id 
-    LEFT JOIN TaskStatuses AS s ON t.statusId = s.id 
-    LEFT JOIN Users AS u3 ON t.updatedBy = u3.id 
-    WHERE t.id = ?;
-    '''
-
-    cursor.execute(query, (id,))
-    row = cursor.fetchone()
-    db.close()
-
-    if row: return dict(row), 200
-    else:   return {}, 404
 
 def get_task_list(pending = None, offset = None):
     db = get_db()
@@ -149,7 +123,40 @@ def get_task_list(pending = None, offset = None):
     if rows: return [dict(row) for row in rows], 200
     return [], 200
 
+def get_task_details(id):
+    if not id or not id.isdigit(): return None, 400
+
+    db = get_db()
+    cursor = db.cursor()
+
+    query = '''
+    SELECT 
+        t.id, t.description, t.deadline, t.urgent, t.createdAt, t.lastUpdate,
+        a.name AS area, 
+        u.name AS target, 
+        s.name AS status, 
+        u2.name AS createdBy, 
+        u3.name AS updatedBy
+    FROM Tasks AS t 
+    LEFT JOIN Users AS u ON t.targetId = u.id 
+    LEFT JOIN Users AS u2 ON t.createdBy = u2.id 
+    LEFT JOIN Areas AS a ON t.areaId = a.id 
+    LEFT JOIN TaskStatuses AS s ON t.statusId = s.id 
+    LEFT JOIN Users AS u3 ON t.updatedBy = u3.id 
+    WHERE t.id = ?;
+    '''
+
+    cursor.execute(query, (id,))
+    row = cursor.fetchone()
+    db.close()
+
+    if row: return dict(row), 200
+    else:   return None, 404
+
 def create_task(description, deadline, urgent, targetId, areaId, createdBy):
+    if not description or not deadline or not targetId or not areaId or not createBy: return None, 400
+    if not targetId.isdigit() or not areaId.isdigit() or not createBy.isdigit():      return None, 400
+
     db = get_db()
     cursor = db.cursor()
 
@@ -162,29 +169,61 @@ def create_task(description, deadline, urgent, targetId, areaId, createdBy):
         cursor.execute(query, (description, deadline, urgent, targetId, areaId, createdBy,))
         db.commit()
     except Exception as e:
-        return f"Failed to insert into tasks: {e}", 500
+        print(f'EXCEPTION: create_task(description={description}, deadline={deadline}, urgent={urgent}, targetId={targetId}, areaId={areaId}, createBy={createdBy}): {e}')
+        return None, 500
     finally: db.close()
-    return "", 201
+    return None, 201
 
-def update_task_status(id, newStatus, user):
-    taskStatus = newStatus
-    if not taskStatus.isdigit():
-        taskStatus, status = get_status(name = newStatus)
-        if status == 404:
-            return dict({"success": False, "error": "status does not exist"}), 404
-        taskStatus = taskStatus[0].get("id")
+def update_task_status(id, statusId, userId):
+    if not id or not statusId or not userId:                               return "", 400
+    if not id.isdigit() or not statusId.isdigit() or not userId.isdigit(): return "", 400
 
     db     = get_db()
     cursor = db.cursor()
     query  = "UPDATE Tasks SET statusId = ?, updatedBy = ? WHERE id = ?;"
 
     try:
-        print(id, taskStatus, user)
-        cursor.execute(query, (taskStatus, user, id,))
+        cursor.execute(query, (statusId, userId, id,))
         db.commit()
     except Exception as e:
-        return f"Failed to update tasks: {e}", 500
+        print(f'EXCEPTION: update_task_status(id={id}, statusId={statusId}, userId={userId}): {e}')
+        return None, 500
     finally: db.close()
 
-    return "", 204
+    return None, 204
+
+def get_comments(taskId):
+    if not taskId or not taskId.isdigit(): return "", 400
+
+    db     = get_db()
+    cursor = db.cursor()
+    query  = '''
+        SELECT c.content, u.name As user
+        FROM Comments As c
+        LEFT JOIN Users AS u on u.id = c.userId
+        WHERE taskId = ?
+    '''
+    cursor.execute(query, (taskId,))
+    rows = cursor.fetchall()
+
+    if not rows: return [], 200 # ? 404
+    else:        return [dict(row) for row in rows], 200
+
+def create_comment(taskId, userId, content):
+    if not taskId or not userId or not content:      return "", 400
+    if not userId.isdigit() or not taskId.isdigit(): return "", 400
+
+    db     = get_db()
+    cursor = db.cursor()
+    query  = "INSERT INTO Comments (taskId, userId, content) VALUES (? ? ?)"
+
+    try:
+        cursor.execute(query, (taskId, userId, content,))
+        db.commit()
+    except Exception as e:
+        print(f'EXCEPTION: create_comment(taskId={taskId}, userId={statusId}, content=\"{content}\"): {e}')
+        return None, 500
+    finally: db.close()
+
+    return "", 201
 
