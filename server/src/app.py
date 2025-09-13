@@ -81,30 +81,29 @@ def get_task_route():
     else:               return jsonify({"success": False, "data": "Invalid request"}), 400
 
 
+# TODO better naming
 @app.route("/task", methods=['PATCH'])
 @jwt_required()
 def update_task_route():
     currentUser = get_jwt_identity()
-    params      = request.args.to_dict()
     data        = request.json
 
-    if not data.get('id') or not params["id"].isdigit():
-        return jsonify({"success": False, "data": "Invalide or missing Task ID"}), 400
-
-    if not data.get('status'):
-        return jsonify({"success": False, "data": "Invalide or missing status"}), 400
+    taskId      = data.get('id')
+    newStatus   = data.get('status')
 
     user, status = get_users(name=currentUser)
-    if status != 200: return "", 401
+    if status != 200: return jsonify({"success": False, "data": "Unauthorized"}), 401
 
-    stat, success = get_status(name=data["status"])
-    if status != 200: return "", 400
+    stat, success = get_status(name=newStatus)
+    if status != 200: return jsonify({"success": False, "data": "Bad request"}), 400
 
-    data, status = update_task_status(id=params['id'], statusId=stat[0]['id'], userId=user[0]['id'])
+    data, status = update_task_status(id=taskId, statusId=stat[0]['id'], userId=user[0]['id'])
 
-    if   status == 204: return "", 204
-    elif status == 500: return jsonifu(), 500
-    else:             return jsonify({"success": False, "error": data}), status
+    if     status == 204: return "", 204
+    elif   status == 400: return jsonify({"success": False, "data": "Bad request"}), 400
+    elif   status == 500: return jsonify({"success": False, "data": "Internal server error"}), 500
+    # UNREACHABLLE
+    else:                 return jsonify({"success": False, "data": "Internal server error"}), 500
 
 @app.route("/taskList", methods=['GET'])
 @jwt_required()
@@ -114,42 +113,48 @@ def task_list_route():
     offset  = params.get("offset")
 
     if pending not in [None, "true", "false"]:
-        return jsonify({"success": False, "error": f"Invalid 'pending' value: {pending}"}), 400
+        return jsonify({"success": False, "data": f"Invalid 'pending' value: {pending}"}), 400
 
     if offset is not None and not offset.isdigit():
-        return jsonify({"success": False, "error": f"Invalid 'offset' value: {offset}"}), 400
+        return jsonify({"success": False, "data": f"Invalid 'offset' value: {offset}"}), 400
 
     data, status = get_task_list(pending, offset)
 
     if status == 200: return jsonify({"success": True, "data": data}), 200
-    else:             return jsonify({"success": False, "data": "Invalid request"}), status
+    # UNREACHABLE
+    else:             return jsonify({"success": False, "data": "Internal server error"}), 500
 
 @app.route("/createTask", methods=['POST'])
 @jwt_required()
 def create_task_route():
-    #current_user = get_jwt_identity()
-
+    currentUser = get_jwt_identity()
     data        = request.json
     description = data.get("description")
     deadline    = data.get("deadline")
     urgent      = data.get("urgent")
     targetId    = data.get("targetId")
     areaId      = data.get("areaId")
-    createdBy   = data.get("createdBy")
+
+    createdBy, status = get_users(name=currentUser)
+    if status != 200: return jsonify({"success": False, "data": "Unauthorized"}), 401
 
     if targetId == 0: targetId = None
-    #TODO
-    if not createdBy: createdBy = 1
 
-    data, status = create_task(description, deadline, urgent, targetId, areaId, createdBy)
+    data, status = create_task(description, deadline, urgent, targetId, areaId, createdBy[0]['id'])
 
-    if status == 201: return "", status
-    else:             return jsonify({"success": False, "error": data}), status
+    if   status == 201: return "", 201
+    elif status == 400: return jsonify({"success": False, "data": "Bad request"}), 400
+    elif status == 500: return jsonify({"success": False, "data": "Internal server error"}), 500
+    # UNREACHABLE
+    else:               return jsonify({"success": False, "data": "Internal server error"}), 500
 
 @app.route("/", methods=['GET'])
 def home_route():
+    register_users('admin', '123') #TODO temp
+    register_users('admin2', '123') #TODO temp
     return "TODO(/)"
 
 if __name__ == '__main__':
+    bootstrap_db(app)
     init_db(app)
     app.run(host="0.0.0.0", port=8080,debug=True)

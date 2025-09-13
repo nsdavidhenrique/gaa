@@ -1,5 +1,5 @@
 # Gestão de Atividades Administrativas
-  GAA é um projeto que tem o propósito de corrigir problemas administrativos relacionados a alocação de pessoas para certas demandas e ao acompanhamento dessas demandas.
+  GAA é um projeto que tem o propósito de corrigir problemas administrativos distribuição e acompanhamento de demandas
 
   O nome foi escolhido para ser similar a outro sistema já utilizado, o GAN (Gestão Administrativa de negócios).
 
@@ -50,7 +50,7 @@ A criação da estrutura do cliente foi feita utilizando os comandos.
 $ npx create-expo-app@latest client --template blank
 $ npx expo install expo-router react-native-safe-area-context react-native-screens expo-linking expo-constants expo-status-bar
 ````
-Para poder executar o cliente é necessário escrever os comandos:  
+Para poder executar o cliente é necessário alterar a variável [HOST](client/src/utils/config.js) com seu ip local, mantendo a porta 8080 e escrever os comandos:  
 ```console
 $ git clone https://github.com/nsdavidhenrique/gaa
 $ cd gaa/client
@@ -139,7 +139,20 @@ O banco de dados possue quatro tabelas:
 |createdBy   |INTEGER  |
 |beingDoneBy |INTEGER  |
 
+**Comments**
+|Coluna    |Tipo    |
+|----------|--------|
+|id        |INTEGER |
+|createdAt |TEXT    |
+|content   |TEXT    |
+|taskId    |INTEGER |
+|userId    |INTEGER |
+
 **API**
+1. /login
+    - Método POST.
+    - Retorna o token da sessão necessário para as outras requisições.
+    - É necessário que o payload contenha os um json com os campos: {"name": string, "password": string}.
 1. /users?id=int&name=string
     - Método GET.
     - Retorna um ou mais usuário.
@@ -150,21 +163,24 @@ O banco de dados possue quatro tabelas:
     - Retorna uma ou mais áreas.
     - id e/ou name podem ser omitidos.
     - Caso ambos sejam omitidos retorna todos as areas.
-3. /taskDetails?id=int
-    - Método GET.
-    - Retorna informações completas sobre uma determinada tarefa.
-    - id não pode ser omitido.
 4. /taskList?pending=bool&offset&=int
     - Método GET.
     - Retorna lista de tarefas.
     - Se pending=true retorna todas as pendentes ou em andamento e se pending=false retorna as finalizadas e 5 em 5 com base no offset.
-5. /createTask
+3. /task?id=int
+    - Método GET.
+    - Retorna informações completas sobre uma determinada tarefa.
+    - id não pode ser omitido.
+5. /task
+    - Método PATCH.
+    - Atualiza o status de uma task
+    - É necessario que o payload contenha um json com os campos: {"id": int, "status": string}
+6. /createTask
     - Método POST
     - Cria uma task.
-    - É necessario passar um json com os campos: {"description" : "string", "deadline" : "datetime", "urgent" : "bool", "targetId" : "int", "areaId" : "int", "createdBy" : "int"}
+    - É necessario que o payload contenha  um json com os campos: {"description": string, "deadline": iso-datetime, "urgent": bool, "targetId": int, "areaId": int, "createdBy": int}
 
 ## Outras referências
 Regras do expo-route: https://docs.expo.dev/router/basics/notation/  
 Regras de layout: https://docs.expo.dev/router/basics/layout/  
 Estilização com React-Native: https://reactnative.dev/docs/stylesheet  
-

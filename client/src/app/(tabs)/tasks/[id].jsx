@@ -13,10 +13,11 @@ export default function TaskDetailScreen() {
     const [loading, setLoading] = useState(true)
     const [task, setTask]       = useState(null)
 
+    const router = useRouter()
+
     const fetchTask = async () => {
         setLoading(true);
 
-        const router = useRouter()
         const token  = await getToken()
         if(!token){
             handleSessionExpired(router)  
@@ -45,7 +46,6 @@ export default function TaskDetailScreen() {
     const updateTaskStatus = async (newStatus) => {
         setLoading(true);
 
-        const router = useRouter()
         const token  = await getToken()
         if(!token){
             handleSessionExpired(router)  
@@ -53,13 +53,13 @@ export default function TaskDetailScreen() {
         }
 
         try {
-            const response = await fetch(`${HOST}/task?id=${id}`, {
+            const response = await fetch(`${HOST}/task`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`,
                 },
-                body: JSON.stringify({status: newStatus}) // TODO by
+                body: JSON.stringify({id: id, status: newStatus}) // TODO by
             });
 
             if (!response.ok) throw new Error(`HTTP ${response.status}`);

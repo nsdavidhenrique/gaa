@@ -1,5 +1,7 @@
 import * as SecureStore from "expo-secure-store"
 
+// TODO move to services
+
 export async function saveToken(token) {
   await SecureStore.setItemAsync("jwt", token);
 }

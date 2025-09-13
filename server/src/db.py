@@ -3,105 +3,101 @@ import sys
 import sqlite3
 from argon2 import PasswordHasher #TODO temp
 from datetime import datetime
-
-# TODO instead of open db connection every time, use context, g
+from flask import g
+from contextlib import contextmanager
 
 db_path = "sql/database.db"
 
-def init_db(app):
+def bootstrap_db(app):
     if not os.path.exists("sql/database.db"):
-        with app.app_context():
-            db = get_db()
+        with sqlite3.connect(db_path) as db:
             with app.open_resource("../sql/schema.sql", "r") as f:
-                db.cursor().executescript(f.read())
-                db.commit()
+                db.executescript(f.read())
             try:
                 with app.open_resource("../sql/default_entries.sql", "r") as f:
-                    db.cursor().executescript(f.read())
-                    db.commit()
-                register_users('admin', '123') #TODO temp
-                register_users('admin2', '123') #TODO temp
-                create_task('description', "2025-08-15T14:30-03:00", True, 1, 1, 1)
+                    db.executescript(f.read())
             except Exception as e:
                 db.close()
                 sys.stderr.write(f"Error on inserting default_entries: {e}\n")
                 os.remove(db_path)
                 exit(1)
 
+def init_db(app):
+    app.teardown_appcontext(close_db)
+
 def get_db():
-    db = sqlite3.connect(db_path)
-    db.execute("PRAGMA foreign_keys = ON;")
-    db.row_factory = sqlite3.Row
-    db.text_factory = lambda b: b.decode('utf-8', errors='replace')
-    return db
+    if 'db' not in g:
+        g.db = sqlite3.connect(db_path)
+        g.db.execute("PRAGMA foreign_keys = ON;")
+        g.db.row_factory = sqlite3.Row
+        g.db.text_factory = lambda b: b.decode('utf-8', errors='replace')
+    return g.db
+
+def close_db(exception):
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
+
+@contextmanager
+def db_cursor(commit=False):
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        yield cursor
+        if commit:
+            db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
 def register_users(name, password): #TODO temp
     ph = PasswordHasher()
     password_hash = ph.hash(password)
 
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("INSERT INTO Users (name, password_hash) VALUES (?, ?)", (name, password_hash,))
-    db.commit()
-    db.close()
+    with db_cursor(commit=True) as cursor:
+        cursor.execute("INSERT INTO Users (name, password_hash) VALUES (?, ?)", (name, password_hash,))
 
 def get_user_and_password(name = None):
-    if name == None: return None, 400
+    if not name: return None, 400
 
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM Users WHERE name = ? ;", (name,))
-    row = cursor.fetchone()
+    with db_cursor() as cursor:
+        cursor.execute("SELECT * FROM Users WHERE name = ? ;", (name,))
+        row = cursor.fetchone()
 
     if not row: return None, 404
     return dict(row), 200
 
 def get_users(id = None, name = None):
-    db = get_db()
-    cursor = db.cursor()
-
-    if id:     cursor.execute("SELECT id, name FROM Users WHERE id = ? ;", (id,))
-    elif name: cursor.execute("SELECT id, name FROM Users WHERE name = ? ;", (name,))
-    else:      cursor.execute("SELECT id, name FROM Users;")
-
-    rows = cursor.fetchall()
-    db.close()
+    with db_cursor() as cursor:
+        if id:     cursor.execute("SELECT id, name FROM Users WHERE id = ? ;", (id,))
+        elif name: cursor.execute("SELECT id, name FROM Users WHERE name = ? ;", (name,))
+        else:      cursor.execute("SELECT id, name FROM Users;")
+        rows = cursor.fetchall()
 
     if (id is not None or name is not None) and not rows: return None, 404 
     else:                                                 return [dict(row) for row in rows], 200
 
 def get_areas(id = None, name = None):
-    db = get_db()
-    cursor = db.cursor()
-
-    if id:     cursor.execute("SELECT * from Areas WHERE id = ? ;", (id,))
-    elif name: cursor.execute("SELECT * from Areas WHERE name = ? ;", (name,))
-    else:      cursor.execute("SELECT * FROM Areas;")
-
-    rows = cursor.fetchall()
-    db.close()
+    with db_cursor() as cursor:
+        if id:     cursor.execute("SELECT * from Areas WHERE id = ? ;", (id,))
+        elif name: cursor.execute("SELECT * from Areas WHERE name = ? ;", (name,))
+        else:      cursor.execute("SELECT * FROM Areas;")
+        rows = cursor.fetchall()
 
     if (id is not None or name is not None) and not rows: return None, 404 
     else:                                                 return [dict(row) for row in rows], 200
 
 def get_status(id = None, name = None):
-    db = get_db()
-    cursor = db.cursor()
-
-    if id:     cursor.execute("SELECT * FROM TaskStatuses WHERE id = ? ;", (id,))
-    elif name: cursor.execute("SELECT * FROM TaskStatuses WHERE name = ? ;", (name,))
-    else:      cursor.execute("SELECT * FROM TaskStatuses;")
-
-    rows = cursor.fetchall()
-    db.close()
+    with db_cursor() as cursor:
+        if id:     cursor.execute("SELECT * FROM TaskStatuses WHERE id = ? ;", (id,))
+        elif name: cursor.execute("SELECT * FROM TaskStatuses WHERE name = ? ;", (name,))
+        else:      cursor.execute("SELECT * FROM TaskStatuses;")
+        rows = cursor.fetchall()
 
     if (id is not None or name is not None) and not rows: return None, 404 
     else:                                                 return [dict(row) for row in rows], 200
 
 def get_task_list(pending = None, offset = None):
-    db = get_db()
-    cursor = db.cursor()
-
     query = '''
     SELECT
         t.id, t.description, t.deadline, t.urgent, s.name AS status, u.name AS target
@@ -110,24 +106,26 @@ def get_task_list(pending = None, offset = None):
     LEFT JOIN Users as u ON t.targetId = u.id
     '''
 
-    if pending is None or pending == "true":
-        query += "WHERE t.statusId != 3"
-        cursor.execute(query)
-    else:
-        query += "WHERE t.statusId = 3 ORDER BY t.createdAt DESC LIMIT 5 OFFSET ? ;"
-        cursor.execute(query, (int(offset or 0) * 5,))
+    with db_cursor() as cursor:
+        if pending is None or pending == "true":
+            query += "WHERE t.statusId != 3"
+            cursor.execute(query)
+        else:
+            query += "WHERE t.statusId = 3 ORDER BY t.createdAt DESC LIMIT 5 OFFSET ? ;"
+            cursor.execute(query, (int(offset or 0) * 5,))
 
-    rows = cursor.fetchall()
-    db.close()
-    
+        rows = cursor.fetchall()
+        
     if rows: return [dict(row) for row in rows], 200
     return [], 200
 
 def get_task_details(id):
-    if not id or not id.isdigit(): return None, 400
-
-    db = get_db()
-    cursor = db.cursor()
+    if not id: return None, 400
+    try:
+        id = int(id)
+    except Exception as e:
+        print(f'EXCEPTION: get_task_details(id={id}): {e}')
+        return None, 400
 
     query = '''
     SELECT 
@@ -146,84 +144,96 @@ def get_task_details(id):
     WHERE t.id = ?;
     '''
 
-    cursor.execute(query, (id,))
-    row = cursor.fetchone()
-    db.close()
+    with db_cursor() as cursor:
+        cursor.execute(query, (id,))
+        row = cursor.fetchone()
 
     if row: return dict(row), 200
     else:   return None, 404
 
 def create_task(description, deadline, urgent, targetId, areaId, createdBy):
-    if not description or not deadline or not targetId or not areaId or not createBy: return None, 400
-    if not targetId.isdigit() or not areaId.isdigit() or not createBy.isdigit():      return None, 400
+    if not description or not deadline or not targetId or not areaId or not createdBy: return None, 400
 
-    db = get_db()
-    cursor = db.cursor()
+    try:
+        targetId  = int(targetId)
+        areaId    = int(areaId)
+        createdBy = int(createdBy)
+    except Exception as e:
+        print(f'EXCEPTION: create_task(description={description}, deadline={deadline}, urgent={urgent}, targetId={targetId}, areaId={areaId}, createBy={createdBy}): {e}')
+        return None, 400
 
     query = '''
     INSERT INTO Tasks (description, deadline, urgent, targetId, areaId, createdBy)
     VALUES (?, ?, ?, ?, ?, ?)
     '''
 
-    try:
-        cursor.execute(query, (description, deadline, urgent, targetId, areaId, createdBy,))
-        db.commit()
-    except Exception as e:
-        print(f'EXCEPTION: create_task(description={description}, deadline={deadline}, urgent={urgent}, targetId={targetId}, areaId={areaId}, createBy={createdBy}): {e}')
-        return None, 500
-    finally: db.close()
+    with db_cursor(commit=True) as cursor:
+        try:
+            cursor.execute(query, (description, deadline, urgent, targetId, areaId, createdBy,))
+        except Exception as e:
+            print(f'EXCEPTION: create_task(description={description}, deadline={deadline}, urgent={urgent}, targetId={targetId}, areaId={areaId}, createBy={createdBy}): {e}')
+            return None, 500
     return None, 201
 
 def update_task_status(id, statusId, userId):
-    if not id or not statusId or not userId:                               return "", 400
-    if not id.isdigit() or not statusId.isdigit() or not userId.isdigit(): return "", 400
-
-    db     = get_db()
-    cursor = db.cursor()
-    query  = "UPDATE Tasks SET statusId = ?, updatedBy = ? WHERE id = ?;"
-
+    if not id or not statusId or not userId: return None, 400
     try:
-        cursor.execute(query, (statusId, userId, id,))
-        db.commit()
+        id       = int(id)
+        statusId = int(statusId)
+        userId   = int(userId)
     except Exception as e:
         print(f'EXCEPTION: update_task_status(id={id}, statusId={statusId}, userId={userId}): {e}')
-        return None, 500
-    finally: db.close()
+        return None, 400
+
+    query  = "UPDATE Tasks SET statusId = ?, updatedBy = ? WHERE id = ?;"
+
+    with db_cursor(commit=True) as cursor:
+        try:
+            cursor.execute(query, (statusId, userId, id,))
+        except Exception as e:
+            print(f'EXCEPTION: update_task_status(id={id}, statusId={statusId}, userId={userId}): {e}')
+            return None, 500
 
     return None, 204
 
 def get_comments(taskId):
-    if not taskId or not taskId.isdigit(): return "", 400
+    if not taskId: return None, 400
+    try:
+        taskId = int(taskId)
+    except Exception as e:
+        print(f'EXCEPTION: get_comments(taskId={taskId}): {e}')
+        return None, 400
 
-    db     = get_db()
-    cursor = db.cursor()
     query  = '''
         SELECT c.content, u.name As user
         FROM Comments As c
         LEFT JOIN Users AS u on u.id = c.userId
         WHERE taskId = ?
     '''
-    cursor.execute(query, (taskId,))
-    rows = cursor.fetchall()
+    with db_cursor() as cursor:
+        cursor.execute(query, (taskId,))
+        rows = cursor.fetchall()
 
     if not rows: return [], 200 # ? 404
     else:        return [dict(row) for row in rows], 200
 
 def create_comment(taskId, userId, content):
-    if not taskId or not userId or not content:      return "", 400
-    if not userId.isdigit() or not taskId.isdigit(): return "", 400
-
-    db     = get_db()
-    cursor = db.cursor()
-    query  = "INSERT INTO Comments (taskId, userId, content) VALUES (? ? ?)"
-
+    if not taskId or not userId or not content:      return None, 400
     try:
-        cursor.execute(query, (taskId, userId, content,))
-        db.commit()
+        userId = int(userId)
+        taskId = int(taskId)
     except Exception as e:
-        print(f'EXCEPTION: create_comment(taskId={taskId}, userId={statusId}, content=\"{content}\"): {e}')
-        return None, 500
-    finally: db.close()
+        print(f'EXCEPTION: create_comments(taskId={taskId}, userId={userId}, content={content}): {e}')
+        return None, 400
 
-    return "", 201
+    query  = "INSERT INTO Comments (taskId, userId, content) VALUES (?, ?, ?)"
+
+    with db_cursor(commit=True) as cursor:
+        try:
+            cursor.execute(query, (taskId, userId, content,))
+        except Exception as e:
+            print(f'EXCEPTION: create_comment(taskId={taskId}, userId={userId}, content=\"{content}\"): {e}')
+            return None, 500
+
+    return None, 201
 

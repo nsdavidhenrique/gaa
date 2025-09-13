@@ -43,7 +43,7 @@ CREATE TABLE Comments(
 
     FOREIGN KEY (taskId) REFERENCES Tasks(id),
     FOREIGN KEY (userId) REFERENCES Users(id)
-)
+);
 
 CREATE TRIGGER set_lastUpdate_on_status_change
 AFTER UPDATE OF statusId ON Tasks

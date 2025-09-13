@@ -8,11 +8,11 @@ import { HOST } from '../../utils/config'
 import { saveToken, deleteToken } from '../../utils/jwt'
 import { loginStyle }    from '../../styles/loginStylesheet';
 
-const router = useRouter()
 
 export default function Login(){
     const [name, setName] = useState("")
     const [password, setPassword] = useState("")
+    const router = useRouter()
 
     useEffect(() => {
         deleteToken()
@@ -23,7 +23,8 @@ export default function Login(){
             Alert.alert("Insira usuário e senha")
             return
         }
-        response = await fetch(`${HOST}/login`, {
+
+        let response = await fetch(`${HOST}/login`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({'username': name, 'password': password})
@@ -40,7 +41,7 @@ export default function Login(){
             return
         }
         
-        body = await response.json()
+        let body = await response.json()
         await saveToken(body.data);
         router.replace("/(tabs)/tasks")
     }

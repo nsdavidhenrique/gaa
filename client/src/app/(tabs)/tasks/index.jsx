@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Text, View, ScrollView, Button, FlatList, RefreshControl } from 'react-native';
 
 import { StatusBar } from 'expo-status-bar'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { Stack, useRouter } from 'expo-router';
 
 import { HOST }                 from '../../../utils/config'
@@ -18,10 +18,11 @@ export default function Task() {
     const [offset, setOffset] = useState(0);
     const [hasMoreTasks, setHasMoreTasks] = useState(true);
 
+    const router = useRouter()
+
     const fetchPending = async () => {
         setLoading(true);
 
-        const router = useRouter()
         const token = await getToken()
         if(!token){
             handleSessionExpired(router)  
@@ -51,7 +52,6 @@ export default function Task() {
         if(!hasMoreTasks) return
         setLoading(true);
 
-        const router = useRouter()
         const token = await getToken()
         if(!token) handleSessionExpired(router)  
 
@@ -89,30 +89,28 @@ export default function Task() {
     }, [])
 
     return (
-        <>
+        <SafeAreaProvider>
             <Stack.Screen options={{ headerShown: false }}/>
+            <StatusBar style="auto" />
             <SafeAreaView style={{flex: 1}}>
-                <StatusBar style="auto" />
-                <FlatList
-                    data={tasks}
-                    keyExtractor={item => item.id.toString()}
-                    renderItem={({ item }) => (
-                        <TaskListItem task={item} />
-                    )}
-                    ListEmptyComponent={() => (
-                        <View style={{ padding: 20, alignItems: 'center' }}>
-                            <Text>Nenhuma tarefa encontrada.</Text>
-                        </View>
-                    )}
-                    refreshing={refreshing}
-                    onRefresh={onRefresh}
-                />
+                <ScrollView
+                    style={{flexGrow: 1}}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                        />
+                    }>
+                    {tasks.map(task => (
+                        <TaskListItem key= {task.id} task={task} />
+                    ))}
+                </ScrollView>
                 <Button
                     title="Carregar mais"
                     disabled={!hasMoreTasks || loading}
                     onPress={fetchDone}
                 />
             </SafeAreaView>
-        </>
-    );
+        </SafeAreaProvider>
+    )
 }
