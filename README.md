@@ -92,7 +92,7 @@ No windows:
 $ git clone https://github.com/nsdavidhenrique/gaa
 $ cd gaa/server
 $ python -m venv venv
-$ source venv/Scripts/activate
+$ venv/Scripts/activate
 $ pip install requirements.txt
 $ python src/app.py
 ````
