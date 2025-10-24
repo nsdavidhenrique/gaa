@@ -3,6 +3,7 @@ from flask_cors import CORS, cross_origin
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
+from datetime import timedelta
 import json
 import sqlite3
 from db import *
@@ -13,6 +14,8 @@ app  = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.config["JWT_SECRET_KEY"] = "foo-bar" # TODO search for best practices to define this key
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=20)
+# TODO refresh token
 
 jwt = JWTManager(app)
 ph  = PasswordHasher()
@@ -27,10 +30,19 @@ def login():
 
     try:
         ph.verify(user["password_hash"], password)
-        access_token = create_access_token(identity=name)
+        access_token = create_access_token(identity=name) # TODO user['id'].tostring
         return jsonify({"success": True, "data": access_token}), 200
-    except VerifyMismatchError:
+    except Exception:
         return jsonify({"success": False, "data": "Denied"}), 401    
+
+@jwt.unauthorized_loader
+def custom_unauthorized_response(callback):
+    return jsonify({"success": False, "data": "Missing or invalid JWT"}), 401
+
+@jwt.invalid_token_loader
+def custom_invalid_token_response(callback):
+    print(callback) # TODO temp
+    return jsonify({"success": False, "data": "Invalid token"}), 422
 
 @app.route("/users", methods=['GET'])
 @jwt_required()

@@ -3,10 +3,9 @@ import { Stack, useLocalSearchParams } from 'expo-router'
 import { Alert, Text, View, Button }   from 'react-native';
 import { useRouter }                   from 'expo-router'
 
-import { HOST }                 from '../../../utils/config'
-import { getToken }             from '../../../utils/jwt'
-import { handleSessionExpired } from '../../../utils/handleSessionExpired'
-import { TaskDetail }           from '../../../components/taskDetail';
+import { HOST }          from '../../../utils/config'
+import { ensureSession } from '../../../services/handleSession'
+import { TaskDetail }    from '../../../components/taskDetail';
 
 export default function TaskDetailScreen() {
     const { id }                = useLocalSearchParams();
@@ -18,26 +17,32 @@ export default function TaskDetailScreen() {
     const fetchTask = async () => {
         setLoading(true);
 
-        const token  = await getToken()
-        if(!token){
-            handleSessionExpired(router)  
-            return
-        }
+        const sessionToken = await ensureSession()
 
         try{
             const response = await fetch(`${HOST}/task?id=${id}`, {
                 method: "GET",
                 headers: {
-                    "Authorization": `Bearer ${token}`,
+                    "Authorization": `Bearer ${sessionToken}`,
                 }
             });
-            if(!response.ok) throw new Error(`HTTP ${response.status}`)
 
-            const json = await response.json();
-            setTask(json.data);
+            if(response.status == 200){
+                const json = await response.json();
+                setTask(json.data);
+                return
+            }
+
+            if(response.status == 401 || response.status == 422){
+                handleSessionExpired(router)
+                return
+            }
+
+            // TODO remove throw error
+            if(!response.ok) throw new Error(`HTTP ${response.status}`)
         } catch(error){
-            // TODO
-            console.error("TODO unable to fetch task detail:", error)
+            // TODO report network error
+            console.error("Task::fetchTaskDetail::Network error: ", err);
         } finally{
             setLoading(false);
         }
@@ -46,27 +51,33 @@ export default function TaskDetailScreen() {
     const updateTaskStatus = async (newStatus) => {
         setLoading(true);
 
-        const token  = await getToken()
-        if(!token){
-            handleSessionExpired(router)  
-            return
-        }
+        const sessionToken = await ensureSession()
 
         try {
             const response = await fetch(`${HOST}/task`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`,
+                    "Authorization": `Bearer ${sessionToken}`,
                 },
                 body: JSON.stringify({id: id, status: newStatus}) // TODO by
             });
 
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            // TODO response.status != 204
-            setTask(prev => ({...prev, status: newStatus})) // TODO por, iniciado em
-        } catch (error) {
-            console.error("TODO: Failed to update task:", error);
+            if(response.status == 204){
+                setTask(prev => ({...prev, status: newStatus})) // TODO por, iniciado em
+                return
+            }
+
+            if(response.status == 401 || response.status == 422){
+                handleSessionExpired(router)
+                return
+            }
+
+            // TODO remove throw error
+            if(!response.ok) throw new Error(`HTTP ${response.status}`)
+        } catch(error){
+            // TODO report network error
+            console.error("Task::updateTask::Network error: ", err);
         } finally {
             setLoading(false);
         }

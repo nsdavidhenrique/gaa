@@ -1,22 +1,33 @@
 import React, { useState, useEffect } from 'react'
-import { Text, View, Button, TextInput, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
-import { StatusBar } from 'expo-status-bar'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router';
+import {
+    Text,
+    View,
+    Button,
+    TextInput,
+    TouchableWithoutFeedback,
+    Keyboard,
+    Alert
+} from 'react-native';
 
-import { HOST } from '../../utils/config'
-import { saveToken, deleteToken } from '../../utils/jwt'
-import { loginStyle }    from '../../styles/loginStylesheet';
+import { StatusBar }    from 'expo-status-bar'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter }    from 'expo-router';
+
+import { HOST }       from '../../utils/config'
+import { login }      from '../../services/handleSession'
+import { loginStyle } from '../../styles/loginStylesheet';
 
 
 export default function Login(){
-    const [name, setName] = useState("")
+    const [name, setName]         = useState("")
     const [password, setPassword] = useState("")
+    // TODO loading
+
     const router = useRouter()
 
     useEffect(() => {
-        deleteToken()
-    },[])
+        // TODO if logged in go to taskList
+    }, [])
 
     const onSubmit = async () => {
         if(name == "" || password == ""){
@@ -42,8 +53,7 @@ export default function Login(){
         }
         
         let body = await response.json()
-        await saveToken(body.data);
-        router.replace("/(tabs)/tasks")
+        await login(router, body.data);
     }
 
     return(

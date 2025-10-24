@@ -22,9 +22,8 @@ import DateTimePicker          from '@react-native-community/datetimepicker'
 import { useForm, Controller } from 'react-hook-form'
 
 import { HOST }                 from '../../../utils/config'
-import { getToken }             from '../../../utils/jwt'
 import { formStyle }            from '../../../styles/formStylesheet'
-import { handleSessionExpired } from '../../../utils/handleSessionExpired'
+import { ensureSession } from '../../../services/handleSession'
 
 export default function TaskForm() {
     const [loading, setLoading]       = useState(false);
@@ -40,61 +39,75 @@ export default function TaskForm() {
     const router = useRouter()
 
     const getUsers = async () => {
-        const token  = await getToken()
-        if(!token){
-            handleSessionExpired(router)  
-            return
-        }
+        const sessionToken = await ensureSession()
 
         try {
             const response = await fetch(`${HOST}/users`, {
                 method: 'GET',
                 headers: {
-                    "Authorization": `Bearer ${token}`,
+                    "Authorization": `Bearer ${sessionToken}`,
                 }
             });
-            if(!response.ok) throw new Error(`HTTP ${response.status}`)
 
-            const json = await response.json();
-            if(json.data.length <= 0){
-                setUsers([{label: "Todos", value: 0}])
-            }else{
-                setUsers([{label:"Todos", value:0}, ...json.data.map(item => ({
-                    label: item.name,
-                    value: item.id
-                }))]);
+            if(response.status == 200){
+                const json = await response.json();
+                if(json.data.length <= 0){
+                    setUsers([{label: "Todos", value: 0}])
+                }else{
+                    setUsers([{label:"Todos", value:0}, ...json.data.map(item => ({
+                        label: item.name,
+                        value: item.id
+                    }))]);
+                }
+                return
             }
-        } catch (err) {
+
+            if(response.status == 401 || response.status == 422){
+                handleSessionExpired(router)
+                return
+            }
+
+            // TODO remove throw error
+            if(!response.ok) throw new Error(`HTTP ${response.status}`)
+        } catch(error){
+            // TODO report network error
             console.error("TODO: Unable to fetch users:", err);
         }
     };
 
     const getAreas = async () => {
-        const token  = await getToken()
-        if(!token){
-            handleSessionExpired(router)  
-            return
-        }
+        const sessionToken = await ensureSession()
 
         try {
             const response = await fetch(`${HOST}/areas`, {
                 method: 'GET',
                 headers: {
-                    "Authorization": `Bearer ${token}`,
+                    "Authorization": `Bearer ${sessionToken}`,
                 }
             });
-            if(!response.ok) throw new Error(`HTTP ${response.status}`)
 
-            const json = await response.json();
-            if(json.data.length <= 0){
-                setAreas([{label: "Todos", value: 0}])
-            }else{
-                setAreas(json.data.map(item => ({
-                    label: item.name,
-                    value: item.id
-                })));
+            if(response.status == 200){
+                const json = await response.json();
+                if(json.data.length <= 0){
+                    setAreas([{label: "Todos", value: 0}])
+                }else{
+                    setAreas(json.data.map(item => ({
+                        label: item.name,
+                        value: item.id
+                    })));
+                }
+                return
             }
-        } catch (err) {
+
+            if(response.status == 401 || response.status == 422){
+                handleSessionExpired(router)
+                return
+            }
+
+            // TODO remove throw error
+            if(!response.ok) throw new Error(`HTTP ${response.status}`)
+        } catch(error){
+            // TODO report network error
             console.error("TODO: Unable to fetch areas:", err);
         }
     };
@@ -105,11 +118,7 @@ export default function TaskForm() {
     }, []);
 
     const postTask = async (data) => {
-        const token  = await getToken()
-        if(!token){
-            handleSessionExpired(router)  
-            return
-        }
+        const sessionToken = await ensureSession()
 
         setLoading(true)
         try{
@@ -117,7 +126,7 @@ export default function TaskForm() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    "Authorization": `Bearer ${token}`,
+                    "Authorization": `Bearer ${sessionToken}`,
                 },
                 body: JSON.stringify(data)
             })
