@@ -42,6 +42,9 @@ export const commonStyles = (theme) => {
         buttonPressed: {
             opacity: 0.8,
         },
+        buttonDisabled: {
+            opacity: 0.5
+        }
 
     });
 };

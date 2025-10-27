@@ -16,8 +16,9 @@ import { ScreenWrapper } from '../../components/ScreenWrapper'
 import { CustomButton }  from '../../components/CustomButton'
 
 import { HOST }         from '../../utils/config'
-import { login }        from '../../services/handleSession'
 import { commonStyles } from '../../styles/commonStyles';
+
+import { login, getSessionToken, isValidSession } from '../../services/handleSession'
 
 
 export default function Login(){
@@ -30,8 +31,12 @@ export default function Login(){
     const styles = commonStyles(theme)
 
     useEffect(() => {
-        // TODO if logged in go to taskList
-    }, [])
+        //const loginIfSessionIsOpened = async () => {
+        //    let session = await getSessionToken()
+        //    if(session) await login(router, session)
+        //}
+        //loginIfSessionIsOpened()
+    }, [router])
 
     const submit = async () => {
         if(name == "" || password == ""){
@@ -46,12 +51,8 @@ export default function Login(){
         })
 
         if(!response.ok){
-            if(response.status == 401){
-                Alert.alert("Usuário ou senha inválida")
-            }
-            if(response.status == 400){
-                Alert.alert("Bad request")
-            }
+            if(response.status == 401) Alert.alert("Usuário ou senha inválida")
+            if(response.status == 400) Alert.alert("Bad request")
             setPassword("")
             return
         }

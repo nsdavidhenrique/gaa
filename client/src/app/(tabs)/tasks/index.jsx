@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import {
+    Alert,
     Text,
     View,
     ScrollView,
@@ -8,13 +9,15 @@ import {
     RefreshControl
 } from 'react-native';
 
-import { StatusBar } from 'expo-status-bar'
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { Stack, useRouter } from 'expo-router';
+
 
 import { ensureSession, handleSessionExpired } from '../../../services/handleSession'
 import { HOST }         from '../../../utils/config'
-import { TaskListItem } from '../../../components/taskListItem'
+
+import { ListItem }      from '../../../components/ListItem'
+import { ScreenWrapper } from '../../../components/ScreenWrapper'
+import { CustomButton }  from '../../../components/CustomButton'
 
 export default function Task() {
     const [loading, setLoading]           = useState(false);
@@ -32,27 +35,19 @@ export default function Task() {
         try{
             const response = await fetch(`${HOST}/taskList?pending=true`, {
                 method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${sessionToken}`,
-                }
+                headers: {"Authorization": `Bearer ${sessionToken}`}
             });
 
             if(response.status == 200){
                 const json = await response.json();
                 setTasks(() => [...json.data]);
-                return
             }
 
-            if(response.status == 401 || response.status == 422){
-                handleSessionExpired(router)
-                return
-            }
-
-            // TODO remove throw error
-            if(!response.ok) throw new Error(`HTTP ${response.status}`)
-        } catch(err){
-            // TODO report network error
-            console.error("Task::fetchPending::Network error: ", err);
+            if(response.status == 401 || response.status == 422) handleSessionExpired(router)
+            if(response.status == 400) Alert.alert("Bad request")
+            if(!response.ok) Alert.alert("HTTP status: ", response.status)
+        } catch(e){
+            console.error("Task::fetchPending(): ", e);
         } finally {
             setLoading(false);
         }
@@ -61,15 +56,12 @@ export default function Task() {
     const fetchDone = async () => {
         if(!hasMoreTasks) return
         setLoading(true);
-
         const sessionToken = await ensureSession()
 
         try{
             const response = await fetch(`${HOST}/taskList?pending=false&offset=${offset}`, {
                 method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${sessionToken}`,
-                }
+                headers: {"Authorization": `Bearer ${sessionToken}`}
             });
 
             if(response.status == 200){
@@ -80,16 +72,11 @@ export default function Task() {
                 return
             }
 
-            if(response.status == 401 || response.status == 422){
-                handleSessionExpired(router)
-                return
-            }
-
-            // TODO remove throw error
-            if(!response.ok) throw new Error(`HTTP ${response.status}`)
+            if(response.status == 401 || response.status == 422) handleSessionExpired(router)
+            if(response.status == 400) Alert.alert("Bad request")
+            if(!response.ok) Alert.alert("HTTP status: ", response.status)
         } catch(error){
-            // TODO report network error
-            console.error("Task::fetchDone::Network error: ", err);
+            console.error("Task::fetchDone(): ", err);
         } finally {
             setLoading(false);
         }
@@ -97,8 +84,8 @@ export default function Task() {
 
     const onRefresh = async () => {
         setRefreshing(true);
-        setOffset(0);
         setHasMoreTasks(true);
+        setOffset(0);
         await fetchPending();
         setRefreshing(false);
     };
@@ -108,28 +95,32 @@ export default function Task() {
     }, [])
 
     return (
-        <SafeAreaProvider>
+        <ScreenWrapper>
             <Stack.Screen options={{ headerShown: false }}/>
-            <StatusBar style="auto" />
-            <SafeAreaView style={{flex: 1}}>
-                <ScrollView
-                    style={{flexGrow: 1}}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={refreshing}
-                            onRefresh={onRefresh}
-                        />
-                    }>
-                    {tasks.map(task => (
-                        <TaskListItem key= {task.id} task={task} />
-                    ))}
-                </ScrollView>
-                <Button
-                    title="Carregar mais"
-                    disabled={!hasMoreTasks || loading}
-                    onPress={fetchDone}
-                />
-            </SafeAreaView>
-        </SafeAreaProvider>
+
+            <FlatList
+                data={tasks}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => <ListItem task={item} />}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                }
+                contentContainerStyle={{
+                    flexGrow: 1,
+                    paddingBottom: 20,
+                }}
+                ListEmptyComponent={
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                        <Text>Nenhuma tarefa pendente</Text>
+                    </View>
+                }
+            />
+            <CustomButton
+                style={{width: 180, height: 40, alignSelf: 'center', marginBottom: 10}}
+                title="Carregar mais"
+                disabled={!hasMoreTasks || loading}
+                onPress={fetchDone}
+            />
+        </ScreenWrapper>
     )
 }
