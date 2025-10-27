@@ -9,27 +9,31 @@ import {
     Alert
 } from 'react-native';
 
-import { StatusBar }    from 'expo-status-bar'
-import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter }    from 'expo-router';
+import { useTheme } from '../../hooks/useTheme.js'
 
-import { HOST }       from '../../utils/config'
-import { login }      from '../../services/handleSession'
-import { loginStyle } from '../../styles/loginStylesheet';
+import { ScreenWrapper } from '../../components/ScreenWrapper'
+import { CustomButton }  from '../../components/CustomButton'
+
+import { HOST }         from '../../utils/config'
+import { login }        from '../../services/handleSession'
+import { commonStyles } from '../../styles/commonStyles';
 
 
 export default function Login(){
-    const [name, setName]         = useState("")
+    const [name,     setName]     = useState("")
     const [password, setPassword] = useState("")
-    // TODO loading
+    const [loading,  setLoading]  = useState(false)
 
     const router = useRouter()
+    const theme  = useTheme()
+    const styles = commonStyles(theme)
 
     useEffect(() => {
         // TODO if logged in go to taskList
     }, [])
 
-    const onSubmit = async () => {
+    const submit = async () => {
         if(name == "" || password == ""){
             Alert.alert("Insira usuário e senha")
             return
@@ -56,34 +60,38 @@ export default function Login(){
         await login(router, body.data);
     }
 
+    // TODO view centered nao responsível
     return(
-        <>
-            <StatusBar />
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <View style={loginStyle.container}>
-                    <View style={loginStyle.field}>
-                        <TextInput
-                            style={loginStyle.input}
-                            placeholder="Usuario"
-                            value={name}
-                            onChangeText={setName}
-                        />
-                    </View>
-                    <View style={loginStyle.field}>
-                        <TextInput
-                            style={loginStyle.input}
-                            placeholder="Senha"
-                            secureTextEntry={true}
-                            value={password}
-                            onChangeText={setPassword}
-                        />
-                    </View>
-                    <Button
-                        title="Entrar"
-                        onPress={onSubmit}
+        <ScreenWrapper style={{justifyContent: 'center', alignItems: 'center'}}>
+            <View style={[styles.centered, {
+                width: 300,
+                height: 300,
+                backgroundColor: theme.colors.secondary,
+                borderRadius: 40
+            }]}>
+                <View style={{paddingBottom: 8}}>
+                    <TextInput
+                        style={[styles.input,{width: 200}]}
+                        placeholder="Usuario"
+                        value={name}
+                        onChangeText={setName}
                     />
                 </View>
-            </TouchableWithoutFeedback>
-        </>
+                <View style={{paddingBottom: 8}}>
+                    <TextInput
+                        style={[styles.input,{width: 200}]}
+                        placeholder="Senha"
+                        secureTextEntry={true}
+                        value={password}
+                        onChangeText={setPassword}
+                    />
+                </View>
+                <CustomButton
+                    style={[commonStyles.button, {width: 100}]}
+                    title="Entrar"
+                    onPress={submit}
+                />
+            </View>
+        </ScreenWrapper>
     )
 }
