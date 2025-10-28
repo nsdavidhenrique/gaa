@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react'
 import {
     Text,
     View,
@@ -9,14 +8,14 @@ import {
     Alert
 } from 'react-native';
 
-import { useRouter }    from 'expo-router';
-import { useTheme } from '../../hooks/useTheme.js'
+import { useState, useEffect } from 'react'
+import { useRouter }           from 'expo-router';
+import { useTheme }            from '../../hooks/useTheme.js'
 
+import { HOST }          from '../../utils/config'
+import { commonStyles }  from '../../styles/commonStyles';
 import { ScreenWrapper } from '../../components/ScreenWrapper'
 import { CustomButton }  from '../../components/CustomButton'
-
-import { HOST }         from '../../utils/config'
-import { commonStyles } from '../../styles/commonStyles';
 
 import { login, getSessionToken, isValidSession } from '../../services/handleSession'
 
@@ -31,6 +30,7 @@ export default function Login(){
     const styles = commonStyles(theme)
 
     useEffect(() => {
+        // TODO this is broken
         //const loginIfSessionIsOpened = async () => {
         //    let session = await getSessionToken()
         //    if(session) await login(router, session)

@@ -14,7 +14,7 @@ app  = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.config["JWT_SECRET_KEY"] = "foo-bar" # TODO search for best practices to define this key
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=20)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
 # TODO refresh token
 
 jwt = JWTManager(app)

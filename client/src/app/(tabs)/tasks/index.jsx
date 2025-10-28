@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import {
     Alert,
     Text,
@@ -9,12 +8,11 @@ import {
     RefreshControl
 } from 'react-native';
 
-import { Stack, useRouter } from 'expo-router';
-
+import { useState, useEffect } from 'react'
+import { Stack, useRouter }    from 'expo-router';
 
 import { ensureSession, handleSessionExpired } from '../../../services/handleSession'
-import { HOST }         from '../../../utils/config'
-
+import { HOST }          from '../../../utils/config'
 import { ListItem }      from '../../../components/ListItem'
 import { ScreenWrapper } from '../../../components/ScreenWrapper'
 import { CustomButton }  from '../../../components/CustomButton'
@@ -46,11 +44,9 @@ export default function Task() {
             if(response.status == 401 || response.status == 422) handleSessionExpired(router)
             if(response.status == 400) Alert.alert("Bad request")
             if(!response.ok) Alert.alert("HTTP status: ", response.status)
-        } catch(e){
-            console.error("Task::fetchPending(): ", e);
-        } finally {
-            setLoading(false);
         }
+        catch(e){ console.error("tasks::fetchPending(): ", e) }
+        finally { setLoading(false) }
     }
 
     const fetchDone = async () => {
@@ -75,11 +71,9 @@ export default function Task() {
             if(response.status == 401 || response.status == 422) handleSessionExpired(router)
             if(response.status == 400) Alert.alert("Bad request")
             if(!response.ok) Alert.alert("HTTP status: ", response.status)
-        } catch(error){
-            console.error("Task::fetchDone(): ", err);
-        } finally {
-            setLoading(false);
         }
+        catch(e){ console.error("tasks::fetchDone(): ", e) }
+        finally { setLoading(false) }
     }
 
     const onRefresh = async () => {
@@ -94,6 +88,7 @@ export default function Task() {
         fetchPending();
     }, [])
 
+    // TODO remove 'carregar mais' button or change to 'carregar finalizadas', scroll down load more automatically
     return (
         <ScreenWrapper>
             <Stack.Screen options={{ headerShown: false }}/>
@@ -110,7 +105,7 @@ export default function Task() {
                     paddingBottom: 20,
                 }}
                 ListEmptyComponent={
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                         <Text>Nenhuma tarefa pendente</Text>
                     </View>
                 }

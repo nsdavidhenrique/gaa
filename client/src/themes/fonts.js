@@ -8,7 +8,7 @@ export default {
     },
     fontSizes: {
         title: 24 * scale,
-        subtitle: 18 * scale,
+        subTitle: 18 * scale,
         body: 14 * scale
     }
 }
