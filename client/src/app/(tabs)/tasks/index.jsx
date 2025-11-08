@@ -11,7 +11,6 @@ import {
 
 import { Stack, useRouter } from 'expo-router';
 
-
 import { ensureSession, handleSessionExpired } from '../../../services/handleSession'
 import { HOST }         from '../../../utils/config'
 
@@ -32,25 +31,22 @@ export default function Task() {
         setLoading(true);
         const sessionToken = await ensureSession()
 
-        try{
-            const response = await fetch(`${HOST}/taskList?pending=true`, {
-                method: "GET",
-                headers: {"Authorization": `Bearer ${sessionToken}`}
-            });
+        const response = await fetch(`${HOST}/taskList?pending=true`, {
+            method: "GET",
+            headers: {"Authorization": `Bearer ${sessionToken}`}
+        });
 
-            if(response.status == 200){
-                const json = await response.json();
-                setTasks(() => [...json.data]);
-            }
-
+        if(!response.ok){
             if(response.status == 401 || response.status == 422) handleSessionExpired(router)
             if(response.status == 400) Alert.alert("Bad request")
-            if(!response.ok) Alert.alert("HTTP status: ", response.status)
-        } catch(e){
-            console.error("Task::fetchPending(): ", e);
-        } finally {
-            setLoading(false);
+            if(response.status == 500) Alert.alert("Internal Server Error")
+            setLoading(false)
+            return
         }
+
+        const json = await response.json();
+        setTasks(() => [...json.data]);
+        setLoading(false);
     }
 
     const fetchDone = async () => {
@@ -58,28 +54,24 @@ export default function Task() {
         setLoading(true);
         const sessionToken = await ensureSession()
 
-        try{
-            const response = await fetch(`${HOST}/taskList?pending=false&offset=${offset}`, {
-                method: "GET",
-                headers: {"Authorization": `Bearer ${sessionToken}`}
-            });
+        const response = await fetch(`${HOST}/taskList?pending=false&offset=${offset}`, {
+            method: "GET",
+            headers: {"Authorization": `Bearer ${sessionToken}`}
+        });
 
-            if(response.status == 200){
-                const json = await response.json();
-                if(json.data.length < 5) setHasMoreTasks(false)
-                setTasks(tasks => [...tasks, ...json.data]);
-                setOffset(prev => prev + 1);
-                return
-            }
-
+        if(!response.ok){
             if(response.status == 401 || response.status == 422) handleSessionExpired(router)
             if(response.status == 400) Alert.alert("Bad request")
-            if(!response.ok) Alert.alert("HTTP status: ", response.status)
-        } catch(error){
-            console.error("Task::fetchDone(): ", err);
-        } finally {
-            setLoading(false);
+            if(response.status == 500) Alert.alert("Internal Server Error")
+            setLoading(false)
+            return
         }
+
+        const json = await response.json();
+        if(json.data.length < 5) setHasMoreTasks(false)
+        setTasks(tasks => [...tasks, ...json.data]);
+        setOffset(prev => prev + 1);
+        setLoading(false);
     }
 
     const onRefresh = async () => {

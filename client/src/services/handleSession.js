@@ -34,7 +34,7 @@ export async function isValidSession(sessionToken){
 export async function handleSessionExpired(router){
     Alert.alert(
         "Sessão expirada",
-        "Sua sessão expirou, faça login novamente"//,
+        "Sua sessão expirou, faça login novamente"
     )
     logout(router)
 }

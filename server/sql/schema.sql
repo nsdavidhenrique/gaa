@@ -1,17 +1,18 @@
 CREATE TABLE Users(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR(255) NOT NULL,
-    password_hash VARCHAR NOT NULL
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    type              TEXT CHECK( type IN ('A', 'U') ), -- A for admin and U for user
+    name VARCHAR(255) UNIQUE NOT NULL,
+    password_hash     VARCHAR
 );
 
 CREATE TABLE Areas(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR(255) NOT NULL
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(255) UNIQUE NOT NULL
 );
 
 CREATE TABLE TaskStatuses(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR(255) NOT NULL
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(255) UNIQUE NOT NULL
 );
 
 CREATE TABLE Tasks(
@@ -27,9 +28,9 @@ CREATE TABLE Tasks(
     createdBy   INTEGER NOT NULL,
     updatedBy   INTEGER DEFAULT NULL,
 
-    FOREIGN KEY (targetId) REFERENCES Users(id),
-    FOREIGN KEY (areaId) REFERENCES Areas(id),
-    FOREIGN KEY (statusId) REFERENCES TaskStatuses(id),
+    FOREIGN KEY (targetId)  REFERENCES Users(id),
+    FOREIGN KEY (areaId)    REFERENCES Areas(id),
+    FOREIGN KEY (statusId)  REFERENCES TaskStatuses(id),
     FOREIGN KEY (createdBy) REFERENCES Users(id),
     FOREIGN KEY (updatedBy) REFERENCES Users(id)
 );

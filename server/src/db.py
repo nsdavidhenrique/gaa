@@ -6,6 +6,8 @@ from datetime import datetime
 from flask import g
 from contextlib import contextmanager
 
+# TODO print exception
+
 db_path = "sql/database.db"
 
 def bootstrap_db(app):
@@ -50,32 +52,60 @@ def db_cursor(commit=False):
         db.rollback()
         raise
 
-def register_users(name, password): #TODO temp
+def register_user(username, uType):
+    if not username or not uType: return 400
+
+    with db_cursor(commit=True) as cursor:
+        try:
+            cursor.execute("INSERT INTO Users (name, type) VALUES (?, ?)", (username, uType,))
+            return None, 204
+        except Exception as e:
+            # TODO handle more than duplicated
+            return None, 409
+
+def register_password(username, password): # TODO name or id
+    if not username or not password: return None, 400
+
     ph = PasswordHasher()
     password_hash = ph.hash(password)
 
     with db_cursor(commit=True) as cursor:
-        cursor.execute("INSERT INTO Users (name, password_hash) VALUES (?, ?)", (name, password_hash,))
+        try:
+            cursor.execute("UPDATE Users SET password_hash = ? WHERE name = ?;", (password_hash, username,))
+            return None, 204
+        except Exception as e:
+            return None, 404
 
-def get_user_and_password(name = None):
-    if not name: return None, 400
+def reset_password(username): # TODO name or id
+    if not username: return None, 400
+
+    with db_cursor(commit=True) as cursor:
+        try:
+            cursor.execute("UPDATE Users SET password_hash = NULL WHERE name = ?;", (username,))
+            return None, 204
+        except Exception as e:
+            return None, 404
+    
+
+def get_users(id = None, username = None):
+    with db_cursor() as cursor:
+        if   id:   cursor.execute("SELECT id, name, type FROM Users WHERE id = ? ;", (id,))
+        elif username: cursor.execute("SELECT id, name, type FROM Users WHERE name = ? ;", (username,))
+        else:      cursor.execute("SELECT id, name, type FROM Users;")
+        rows = cursor.fetchall()
+
+    if (id is not None or username is not None) and not rows: return None, 404 
+    else:                                                 return [dict(row) for row in rows], 200
+
+def get_user_and_password(username = None):
+    if not username: return None, 400
 
     with db_cursor() as cursor:
-        cursor.execute("SELECT * FROM Users WHERE name = ? ;", (name,))
+        cursor.execute("SELECT * FROM Users WHERE name = ? ;", (username,))
         row = cursor.fetchone()
 
     if not row: return None, 404
     return dict(row), 200
-
-def get_users(id = None, name = None):
-    with db_cursor() as cursor:
-        if id:     cursor.execute("SELECT id, name FROM Users WHERE id = ? ;", (id,))
-        elif name: cursor.execute("SELECT id, name FROM Users WHERE name = ? ;", (name,))
-        else:      cursor.execute("SELECT id, name FROM Users;")
-        rows = cursor.fetchall()
-
-    if (id is not None or name is not None) and not rows: return None, 404 
-    else:                                                 return [dict(row) for row in rows], 200
 
 def get_areas(id = None, name = None):
     with db_cursor() as cursor:
@@ -87,7 +117,7 @@ def get_areas(id = None, name = None):
     if (id is not None or name is not None) and not rows: return None, 404 
     else:                                                 return [dict(row) for row in rows], 200
 
-def get_status(id = None, name = None):
+def get_statuses(id = None, name = None):
     with db_cursor() as cursor:
         if id:     cursor.execute("SELECT * FROM TaskStatuses WHERE id = ? ;", (id,))
         elif name: cursor.execute("SELECT * FROM TaskStatuses WHERE name = ? ;", (name,))

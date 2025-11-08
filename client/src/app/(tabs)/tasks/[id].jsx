@@ -16,72 +16,48 @@ export default function TaskDetailScreen() {
 
     const fetchTask = async () => {
         setLoading(true);
-
         const sessionToken = await ensureSession()
 
-        try{
-            const response = await fetch(`${HOST}/task?id=${id}`, {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${sessionToken}`,
-                }
-            });
-
-            if(response.status == 200){
-                const json = await response.json();
-                setTask(json.data);
-                return
+        const response = await fetch(`${HOST}/task?id=${id}`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${sessionToken}`,
             }
+        });
 
-            if(response.status == 401 || response.status == 422){
-                handleSessionExpired(router)
-                return
-            }
-
-            // TODO remove throw error
-            if(!response.ok) throw new Error(`HTTP ${response.status}`)
-        } catch(error){
-            // TODO report network error
-            console.error("Task::fetchTaskDetail::Network error: ", err);
-        } finally{
-            setLoading(false);
+        if(!response.ok){
+            if(response.status == 401 || response.status == 422) handleSessionExpired(router)
+            if(response.status == 400) Alert.alert("Bad request")
+            if(response.status == 500) Alert.alert("Internal server error")
         }
+
+        const json = await response.json();
+        setTask(json.data);
+        setLoading(false);
     }
 
     const updateTaskStatus = async (newStatus) => {
         setLoading(true);
-
         const sessionToken = await ensureSession()
 
-        try {
-            const response = await fetch(`${HOST}/task`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${sessionToken}`,
-                },
-                body: JSON.stringify({id: id, status: newStatus}) // TODO by
-            });
+        const response = await fetch(`${HOST}/task`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${sessionToken}`,
+            },
+            body: JSON.stringify({id: id, status: newStatus}) // TODO by
+        });
 
-            if(response.status == 204){
-                setTask(prev => ({...prev, status: newStatus})) // TODO por, iniciado em
-                return
-            }
-
-            if(response.status == 401 || response.status == 422){
-                handleSessionExpired(router)
-                return
-            }
-
-            // TODO remove throw error
-            if(!response.ok) throw new Error(`HTTP ${response.status}`)
-        } catch(error){
-            // TODO report network error
-            console.error("Task::updateTask::Network error: ", err);
-        } finally {
-            setLoading(false);
+        if(!response.ok){
+            if(response.status == 401 || response.status == 422) handleSessionExpired(router)
+            if(response.status == 400) Alert.alert("Bad request")
+            if(response.status == 500) Alert.alert("Internal server error")
         }
-    };
+
+        setTask(prev => ({...prev, status: newStatus})) // TODO por, iniciado em
+        setLoading(false);
+    }
 
     useEffect(() => {
         fetchTask()

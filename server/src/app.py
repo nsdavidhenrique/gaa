@@ -14,26 +14,11 @@ app  = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.config["JWT_SECRET_KEY"] = "foo-bar" # TODO search for best practices to define this key
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=20)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=20)
 # TODO refresh token
 
 jwt = JWTManager(app)
 ph  = PasswordHasher()
-
-@app.route("/login", methods={"POST"})
-def login():
-    name     = request.json.get("username", None)
-    password = request.json.get("password", None)
-
-    user, status = get_user_and_password(name=name)
-    if status == 404: return jsonify({"success": False, "data": "Denied"}), 401    
-
-    try:
-        ph.verify(user["password_hash"], password)
-        access_token = create_access_token(identity=name) # TODO user['id'].tostring
-        return jsonify({"success": True, "data": access_token}), 200
-    except Exception:
-        return jsonify({"success": False, "data": "Denied"}), 401    
 
 @jwt.unauthorized_loader
 def custom_unauthorized_response(callback):
@@ -44,15 +29,76 @@ def custom_invalid_token_response(callback):
     print(callback) # TODO temp
     return jsonify({"success": False, "data": "Invalid token"}), 422
 
+@app.route("/login", methods={"POST"})
+def login_route():
+    username     = request.json.get("username", None)
+    user, status = get_user_and_password(username=username)
+
+    if status == 400:                 return jsonify({"success": False, "data": "Bad request"}), 404
+    if status == 404:                 return jsonify({"success": False, "data": "User not found"}), 404
+    if user['password_hash'] == None: return jsonify({"success": True,  "data": {"hasPassword": False}}), 200
+    else:                             return jsonify({"success": True,  "data": {"hasPassword": True}}), 200
+
+@app.route("/authenticate", methods={"POST"})
+def authenticate_route():
+    username = request.json.get("username", None)
+    password = request.json.get("password", None)
+
+    user, status = get_user_and_password(username=username)
+    if status == 404: return jsonify({"success": False, "data": "Denied"}), 401    
+
+    try:
+        ph.verify(user["password_hash"], password)
+        access_token = create_access_token(identity=username) # TODO user['id'].tostring
+        return jsonify({"success": True, "data": access_token}), 200
+    except Exception:
+        return jsonify({"success": False, "data": "Denied"}), 401    
+
+@app.route("/createUser", methods={"POST"})
+@jwt_required()
+def create_user_route():
+    username = request.json.get("username", None)
+    _, status = register_user(username, 'U')
+
+    if status == 204: return "", 204
+    if status == 400: return jsonify({"success": False, "data": "Bad request"}), 400
+    if status == 409: return jsonify({"success": False, "data": "User already exists"}), 409
+    # UNREACHABLLE
+    else:             return jsonify({"success": False, "data": "Internal server error"}), 500
+
+@app.route("/createPassword", methods={"POST"})
+def create_password_route():
+    username = request.json.get("username", None)
+    password = request.json.get("password", None)
+    _, status = register_password(username, password)
+
+    if status == 204: return "", 204
+    if status == 400: return jsonify({"success": False, "data": "Bad request"}), 400
+    if status == 404: return jsonify({"success": False, "data": "User not found"}), 404
+    # UNREACHABLLE
+    else:             return jsonify({"success": False, "data": "Internal server error"}), 500
+
+@app.route("/resetPassword", methods={"POST"})
+@jwt_required()
+def reset_password_route():
+    username  = request.json.get("username", None)
+    _, status = reset_password(username)
+
+    if status == 204: return "", 204
+    if status == 400: return jsonify({"success": False, "data": "Bad request"}), 400
+    if status == 404: return jsonify({"success": False, "data": "User not found"}), 404
+    # UNREACHABLLE
+    else:             return jsonify({"success": False, "data": "Internal server error"}), 500
+
 @app.route("/users", methods=['GET'])
 @jwt_required()
 def users_route():
     params    = request.args.to_dict()
     idParam   = params.get("id")
-    nameParam = params.get("name")
+    usernameParam = params.get("username")
 
     if idParam:     data, status = get_users(id=idParam)
-    elif nameParam: data, status = get_users(name=nameParam)
+    elif usernameParam: data, status = get_users(username=usernameParam)
     else:           data, status = get_users()
 
     if   status == 200: return jsonify({"success": True,  "data": data}), 200
@@ -65,7 +111,7 @@ def users_route():
 def areas_route():
     params    = request.args.to_dict()
     idParam   = params.get("id")
-    nameParam = params.get("name")
+    nameParam = params.get("username")
 
     if idParam:     data, status = get_areas(id=idParam)
     elif nameParam: data, status = get_areas(name=nameParam)
@@ -103,10 +149,10 @@ def update_task_route():
     taskId      = data.get('id')
     newStatus   = data.get('status')
 
-    user, status = get_users(name=currentUser)
+    user, status = get_users(username=currentUser)
     if status != 200: return jsonify({"success": False, "data": "Unauthorized"}), 401
 
-    stat, success = get_status(name=newStatus)
+    stat, success = get_statuses(name=newStatus)
     if status != 200: return jsonify({"success": False, "data": "Bad request"}), 400
 
     data, status = update_task_status(id=taskId, statusId=stat[0]['id'], userId=user[0]['id'])
@@ -133,8 +179,7 @@ def task_list_route():
     data, status = get_task_list(pending, offset)
 
     if status == 200: return jsonify({"success": True, "data": data}), 200
-    # UNREACHABLE
-    else:             return jsonify({"success": False, "data": "Internal server error"}), 500
+    else: return # UNREACHABLE
 
 @app.route("/createTask", methods=['POST'])
 @jwt_required()
@@ -147,7 +192,7 @@ def create_task_route():
     targetId    = data.get("targetId")
     areaId      = data.get("areaId")
 
-    createdBy, status = get_users(name=currentUser)
+    createdBy, status = get_users(username=currentUser)
     if status != 200: return jsonify({"success": False, "data": "Unauthorized"}), 401
 
     if targetId == 0: targetId = None
@@ -162,8 +207,9 @@ def create_task_route():
 
 @app.route("/", methods=['GET'])
 def home_route():
-    register_users('admin', '123') #TODO temp
-    register_users('admin2', '123') #TODO temp
+    register_user('admin', 'A')
+    register_user('user', 'U')
+    register_password('admin', '123')
     return "TODO(/)"
 
 if __name__ == '__main__':
