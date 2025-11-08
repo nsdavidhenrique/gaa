@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import {
     Alert,
     Text,
@@ -9,11 +8,11 @@ import {
     RefreshControl
 } from 'react-native';
 
-import { Stack, useRouter } from 'expo-router';
+import { useState, useEffect } from 'react'
+import { Stack, useRouter }    from 'expo-router';
 
 import { ensureSession, handleSessionExpired } from '../../../services/handleSession'
-import { HOST }         from '../../../utils/config'
-
+import { HOST }          from '../../../utils/config'
 import { ListItem }      from '../../../components/ListItem'
 import { ScreenWrapper } from '../../../components/ScreenWrapper'
 import { CustomButton }  from '../../../components/CustomButton'
@@ -86,6 +85,7 @@ export default function Task() {
         fetchPending();
     }, [])
 
+    // TODO remove 'carregar mais' button or change to 'carregar finalizadas', scroll down load more automatically
     return (
         <ScreenWrapper>
             <Stack.Screen options={{ headerShown: false }}/>
@@ -102,7 +102,7 @@ export default function Task() {
                     paddingBottom: 20,
                 }}
                 ListEmptyComponent={
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                         <Text>Nenhuma tarefa pendente</Text>
                     </View>
                 }

@@ -11,6 +11,32 @@ export const commonStyles = (theme) => {
             justifyContent: 'center',
             alignItems: 'center',
         },
+        row: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+
+        // Text
+        titleText: {
+            font: theme.fonts.bold,
+            fontSize: theme.fontSizes.title,
+            color: theme.colors.textPrimary
+        },
+        subTitleText: {
+            font: theme.fonts.bold,
+            fontSize: theme.fontSizes.subTitle,
+            color: theme.colors.textPrimary
+        },
+        bodyText: {
+            font: theme.fonts.regular,
+            fontSize: theme.fontSizes.body,
+            color: theme.colors.textPrimary
+        },
+        labelText: {
+            font: theme.fonts.regular,
+            fontSize: theme.fontSizes.body,
+            color: theme.colors.textSecondary
+        },
 
         // Input
         input: {
@@ -35,8 +61,8 @@ export const commonStyles = (theme) => {
         },
         buttonText: {
             font: theme.fonts.bold,
-            fontSize: theme.fontSizes.subtitle,
-            color: theme.colors.textSecondary,
+            fontSize: theme.fontSizes.subTitle,
+            color: theme.colors.textTernary,
             textAlign: 'center',
         },
         buttonPressed: {

@@ -12,11 +12,10 @@ import { useState, useEffect } from 'react'
 import { useRouter }           from 'expo-router';
 import { useTheme }            from '../../hooks/useTheme.js'
 
+import { HOST }          from '../../utils/config'
+import { commonStyles }  from '../../styles/commonStyles';
 import { ScreenWrapper } from '../../components/ScreenWrapper'
 import { CustomButton }  from '../../components/CustomButton'
-
-import { HOST }         from '../../utils/config'
-import { commonStyles } from '../../styles/commonStyles';
 
 import { login, getSessionToken, isValidSession } from '../../services/handleSession'
 
@@ -43,6 +42,7 @@ export default function Login(){
         setHasPassword(false)
     }, [name])
 
+    // TODO this is broken
     useEffect(() => {
         //const loginIfSessionIsOpened = async () => {
         //    let session = await getSessionToken()

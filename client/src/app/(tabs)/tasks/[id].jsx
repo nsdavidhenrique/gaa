@@ -1,29 +1,37 @@
-import React, { useState, useEffect }  from 'react';
+import {
+    Alert,
+    Text,
+    View,
+} from 'react-native';
+
 import { Stack, useLocalSearchParams } from 'expo-router'
-import { Alert, Text, View, Button }   from 'react-native';
-import { useRouter }                   from 'expo-router'
+
+import { useState, useEffect } from 'react';
+import { useRouter }           from 'expo-router'
 
 import { HOST }          from '../../../utils/config'
 import { ensureSession } from '../../../services/handleSession'
-import { TaskDetail }    from '../../../components/taskDetail';
+import { ScreenWrapper } from '../../../components/ScreenWrapper'
+import { CustomButton }  from '../../../components/CustomButton'
+import { TaskDetail }    from '../../../components/taskDetail'
 
 export default function TaskDetailScreen() {
     const { id }                = useLocalSearchParams();
-    const [loading, setLoading] = useState(true)
     const [task, setTask]       = useState(null)
+    const [loading, setLoading] = useState(true)
 
     const router = useRouter()
 
     const fetchTask = async () => {
-        setLoading(true);
+        setLoading(true)
         const sessionToken = await ensureSession()
 
         const response = await fetch(`${HOST}/task?id=${id}`, {
             method: "GET",
             headers: {
-                "Authorization": `Bearer ${sessionToken}`,
+                "Authorization": `Bearer ${sessionToken}`
             }
-        });
+        })
 
         if(!response.ok){
             if(response.status == 401 || response.status == 422) handleSessionExpired(router)
@@ -64,15 +72,27 @@ export default function TaskDetailScreen() {
     }, [id])
 
     // TODO
-    if(loading) return(<Text>Carregando...</Text>)
-    if(!task) return(<Text>Não encontrado!</Text>)
+    if(loading) return(<View style={{justifyContent: 'center', alignItems: 'center'}}><Text>Carregando...</Text></View>)
+    if(!task)   return(<View style={{justifyContent: 'center', alignItems: 'center'}}><Text>Não encontrado!</Text></View>)
 
     return (
-        <>
-            <Stack.Screen options={{ title: ""}}/>
+        <ScreenWrapper>
+            <Stack.Screen options={{ headerShown:false }}/>
             <TaskDetail task={task} />
-            {task.status == "Pendente" && <Button title="Iniciar" onPress={() => updateTaskStatus("Em Andamento")} disabled={loading} />}
-            {task.status == "Em Andamento" && <Button title="Finalizar" onPress={() => updateTaskStatus("Finalizado")} disabled={loading} />}
-        </>
+            {task.status == "Pendente" &&
+                <CustomButton
+                    style={{ alignSelf: 'center', width: 150, marginBottom: 10 }}
+                    title="Iniciar"
+                    onPress={() => updateTaskStatus("Em Andamento")}
+                    disabled={loading}
+                />}
+            {task.status == "Em Andamento" &&
+                <CustomButton
+                    style={{ alignSelf: 'center', width: 150, marginBottom: 10 }}
+                    title="Finalizar"
+                    onPress={() => updateTaskStatus("Finalizado")}
+                    disabled={loading}
+                />}
+        </ScreenWrapper>
     );
 }
