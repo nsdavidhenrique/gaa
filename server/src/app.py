@@ -193,6 +193,7 @@ def create_task_route():
     areaId      = data.get("areaId")
 
     createdBy, status = get_users(username=currentUser)
+    # TODO handling errors incorrectly
     if status != 200: return jsonify({"success": False, "data": "Unauthorized"}), 401
 
     if targetId == 0: targetId = None
