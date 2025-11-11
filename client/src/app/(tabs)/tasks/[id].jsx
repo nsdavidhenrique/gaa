@@ -8,19 +8,25 @@ import { Stack, useLocalSearchParams } from 'expo-router'
 
 import { useState, useEffect } from 'react';
 import { useRouter }           from 'expo-router'
+import { useTheme }            from '../../../hooks/useTheme'     
 
-import { HOST }          from '../../../utils/config'
-import { ensureSession } from '../../../services/handleSession'
 import { ScreenWrapper } from '../../../components/ScreenWrapper'
 import { CustomButton }  from '../../../components/CustomButton'
 import { TaskDetail }    from '../../../components/taskDetail'
 
+import { commonStyles } from '../../../styles/commonStyles'
+
+import { HOST }          from '../../../utils/config'
+import { ensureSession } from '../../../services/handleSession'
+
 export default function TaskDetailScreen() {
-    const { id }                = useLocalSearchParams();
+    const theme = useTheme();
+    const styles = commonStyles(theme);
+    const router = useRouter();
+
+    const {id}                  = useLocalSearchParams();
     const [task, setTask]       = useState(null)
     const [loading, setLoading] = useState(true)
-
-    const router = useRouter()
 
     const fetchTask = async () => {
         setLoading(true)
@@ -72,8 +78,8 @@ export default function TaskDetailScreen() {
     }, [id])
 
     // TODO
-    if(loading) return(<View style={{justifyContent: 'center', alignItems: 'center'}}><Text>Carregando...</Text></View>)
-    if(!task)   return(<View style={{justifyContent: 'center', alignItems: 'center'}}><Text>Não encontrado!</Text></View>)
+    if(loading) return(<View style={styles.centered}><Text>Carregando...</Text></View>)
+    if(!task)   return(<View style={styles.centered}><Text>Não encontrado!</Text></View>)
 
     return (
         <ScreenWrapper>

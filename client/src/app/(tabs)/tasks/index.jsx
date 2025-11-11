@@ -8,8 +8,9 @@ import {
     RefreshControl
 } from 'react-native';
 
-import { useState, useEffect } from 'react'
 import { Stack, useRouter }    from 'expo-router';
+import React, { useState, useEffect } from 'react'
+import { useFocusEffect }      from '@react-navigation/native';
 
 import { ensureSession, handleSessionExpired } from '../../../services/handleSession'
 import { HOST }          from '../../../utils/config'
@@ -80,6 +81,12 @@ export default function Task() {
         await fetchPending();
         setRefreshing(false);
     };
+
+    useFocusEffect(
+        React.useCallback(() => {
+            onRefresh()
+        }, [])
+    );
 
     useEffect(() => {
         fetchPending();

@@ -15,9 +15,9 @@ export const ScreenWrapper = ({ children, style }) =>{
         <GestureHandlerRootView>
             <SafeAreaProvider>
                 <StatusBar style="auto"/>
-                <TapGestureHandler style={{flex: 1}} onActivated={Keyboard.dismiss}>
+                <Pressable style={{ flex: 1 }} pointerEvents="box-none" onPress={Keyboard.dismiss}>
                     <SafeAreaView style={[styles.screen, style]}>{children}</SafeAreaView>
-                </TapGestureHandler>
+                </Pressable>
             </SafeAreaProvider>
         </GestureHandlerRootView>
     )
