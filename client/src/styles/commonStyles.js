@@ -17,8 +17,6 @@ export const commonStyles = (theme) => {
         },
         card: {
             borderRadius: 16,
-            paddingVertical: 40,
-            paddingHorizontal: 25,
             shadowColor: '#000',
             shadowOpacity: 0.2,
             shadowOffset: {width: 0, height: 3},

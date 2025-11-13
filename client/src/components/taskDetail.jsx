@@ -68,10 +68,6 @@ export const TaskDetail = ({ task }) => {
                     Prazo: {(new Date(task.deadline)).toLocaleString("pt-BR")} {isLate(task.deadline) && <Text style={defaultStyle.isLate}> Atrasado!</Text>}
                 </Text>
             </View>
-            <View style={defaultStyle.fieldContainer}>
-                <Text style={styles.subTitleText}>Comentários:</Text>
-                <Text>TODO!!!</Text>
-            </View>
         </ScrollView>
     )
 }

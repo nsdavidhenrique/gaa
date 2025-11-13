@@ -38,7 +38,7 @@ CREATE TABLE Tasks(
 CREATE TABLE Comments(
     id        INTEGER PRIMARY KEY AUTOINCREMENT,
     createdAt TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M%SZ', 'now')) NOT NULL,
-    content   TEXT NOT NULL, -- TODO BETTER NAME
+    content   TEXT NOT NULL,
     taskId    INTEGER NOT NULL,
     userId    INTEGER NOT NULL,
 

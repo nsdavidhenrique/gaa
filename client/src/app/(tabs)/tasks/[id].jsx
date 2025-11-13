@@ -2,11 +2,14 @@ import {
     Alert,
     Text,
     View,
+
+    FlatList,
 } from 'react-native';
 
 import { ScreenWrapper } from '../../../components/ScreenWrapper'
 import { CustomButton }  from '../../../components/CustomButton'
-import { TaskDetail }    from '../../../components/taskDetail'
+import { TaskDetail }    from '../../../components/TaskDetail'
+import { Comment }       from '../../../components/Comment'
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useState, useEffect } from 'react';
@@ -22,11 +25,12 @@ export default function TaskDetailScreen() {
     const styles = commonStyles(theme);
     const router = useRouter();
 
-    const {id}                  = useLocalSearchParams();
-    const [task, setTask]       = useState(null)
-    const [loading, setLoading] = useState(true)
+    const {id}                    = useLocalSearchParams();
+    const [task, setTask]         = useState(null)
+    const [comments, setComments] = useState([])
+    const [loading, setLoading]   = useState(true)
 
-    const fetchTask = async () => {
+    const getTask = async () => {
         setLoading(true)
 
         const response = await Api.getTask(id, router)
@@ -38,6 +42,22 @@ export default function TaskDetailScreen() {
 
         const json = await response.json();
         setTask(json.data)
+        setLoading(false)
+    }
+
+    const getComments = async () => {
+        setLoading(true)
+
+        const response = await Api.getComments(id, router)
+        if(!response.ok){
+            //if(reponse.status == 404) Alert.alert("Tarefa não encontrada")
+            setLoading(false)
+            return
+        }
+
+        const body = await response.json();
+        setComments(body.data)
+
         setLoading(false)
     }
 
@@ -54,8 +74,34 @@ export default function TaskDetailScreen() {
         setLoading(false)
     }
 
+    const addComment = async (text) => {
+        setLoading(true)
+
+        const response = await Api.createComment({id: id, content: text}, router)
+        if(!response.ok){
+            setLoading(false)
+            return
+        }
+        
+        setLoading(false)
+    }
+
+    const addCommentPrompt = () => {
+        setLoading(true)
+        Alert.prompt(
+            "Novo comentário",
+            "",
+            [
+                {text: "Cancelar" },
+                {text: "Adicionar", onPress: async (text) => {await addComment(text)}}
+            ]
+        )
+        setLoading(false)
+    }
+
     useEffect(() => {
-        fetchTask()
+        getTask()
+        getComments()
     }, [id])
 
     // TODO
@@ -66,20 +112,41 @@ export default function TaskDetailScreen() {
         <ScreenWrapper>
             <Stack.Screen options={{ headerShown:false }}/>
             <TaskDetail task={task} />
+
+            <FlatList
+                data={comments}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => <Comment data={item} />}
+                ListEmptyComponent={
+                    <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                        <Text>Nenhum Commentário</Text>
+                    </View>
+                }
+                showsVerticalScrollIndicator={true}
+            />
+
+            <CustomButton
+                style={{ marginBottom: 10 }}
+                title="Adicionar Comentário"
+                onPress={() => addCommentPrompt()}
+                disabled={loading}
+            />
+
             {task.status == "Pendente" &&
-                <CustomButton
-                    style={{ alignSelf: 'center', width: 150, marginBottom: 10 }}
-                    title="Iniciar"
-                    onPress={() => updateTaskStatus("Em Andamento")}
-                    disabled={loading}
-                />}
+            <CustomButton
+                style={{ marginBottom: 10 }}
+                title="Iniciar"
+                onPress={() => updateTaskStatus("Em Andamento")}
+                disabled={loading}
+            />}
+
             {task.status == "Em Andamento" &&
-                <CustomButton
-                    style={{ alignSelf: 'center', width: 150, marginBottom: 10 }}
-                    title="Finalizar"
-                    onPress={() => updateTaskStatus("Finalizado")}
-                    disabled={loading}
-                />}
+            <CustomButton
+                style={{ marginBottom: 10 }}
+                title="Finalizar"
+                onPress={() => updateTaskStatus("Finalizado")}
+                disabled={loading}
+            />}
         </ScreenWrapper>
     );
 }

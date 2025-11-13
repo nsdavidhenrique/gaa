@@ -8,8 +8,6 @@ import json
 import sqlite3
 from db import *
 
-#TODO add edit and delete tasks, and register
-
 app  = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
@@ -26,7 +24,6 @@ def custom_unauthorized_response(callback):
 
 @jwt.invalid_token_loader
 def custom_invalid_token_response(callback):
-    print(callback) # TODO temp
     return jsonify({"success": False, "data": "Invalid token"}), 422
 
 @app.route("/login", methods={"POST"})
@@ -49,7 +46,7 @@ def authenticate_route():
 
     try:
         ph.verify(user["password_hash"], password)
-        access_token = create_access_token(identity=username) # TODO user['id'].tostring
+        access_token = create_access_token(identity=str(user['id'])) # TODO
         return jsonify({"success": True, "data": access_token}), 200
     except Exception:
         return jsonify({"success": False, "data": "Denied"}), 401    
@@ -106,7 +103,7 @@ def users_route():
     # UNREACHABLE
     else:               return jsonify({"success": False, "data": "Invalid request"}), 400
 
-@app.route("/areas")
+@app.route("/areas", methods=['GET'])
 @jwt_required()
 def areas_route():
     params    = request.args.to_dict()
@@ -139,29 +136,45 @@ def get_task_route():
     else:               return jsonify({"success": False, "data": "Invalid request"}), 400
 
 
-# TODO better naming
 @app.route("/task", methods=['PATCH'])
 @jwt_required()
 def update_task_route():
-    currentUser = get_jwt_identity()
-    data        = request.json
+    data      = request.json
+    taskId    = data.get('id')
+    userId    = get_jwt_identity()
+    newStatus = data.get('status')
 
-    taskId      = data.get('id')
-    newStatus   = data.get('status')
-
-    user, status = get_users(username=currentUser)
-    if status != 200: return jsonify({"success": False, "data": "Unauthorized"}), 401
-
-    stat, success = get_statuses(name=newStatus)
+    stat, status = get_statuses(name=newStatus)
     if status != 200: return jsonify({"success": False, "data": "Bad request"}), 400
 
-    data, status = update_task_status(id=taskId, statusId=stat[0]['id'], userId=user[0]['id'])
+    data, status = update_task_status(id=taskId, statusId=stat[0]['id'], userId=userId)
 
     if     status == 204: return "", 204
     elif   status == 400: return jsonify({"success": False, "data": "Bad request"}), 400
     elif   status == 500: return jsonify({"success": False, "data": "Internal server error"}), 500
     # UNREACHABLLE
     else:                 return jsonify({"success": False, "data": "Internal server error"}), 500
+
+@app.route("/task", methods=['POST'])
+@jwt_required()
+def create_task_route():
+    data        = request.json
+    description = data.get("description")
+    deadline    = data.get("deadline")
+    urgent      = data.get("urgent")
+    targetId    = data.get("targetId")
+    areaId      = data.get("areaId")
+    createdBy   = get_jwt_identity()
+
+    if targetId == 0: targetId = None
+
+    data, status = create_task(description, deadline, urgent, targetId, areaId, createdBy)
+
+    if   status == 201: return "", 201
+    elif status == 400: return jsonify({"success": False, "data": "Bad request"}), 400
+    elif status == 500: return jsonify({"success": False, "data": "Internal server error"}), 500
+    # UNREACHABLE
+    else:               return jsonify({"success": False, "data": "Internal server error"}), 500
 
 @app.route("/taskList", methods=['GET'])
 @jwt_required()
@@ -178,39 +191,45 @@ def task_list_route():
 
     data, status = get_task_list(pending, offset)
 
+    # TODO
     if status == 200: return jsonify({"success": True, "data": data}), 200
     else: return # UNREACHABLE
 
-@app.route("/createTask", methods=['POST'])
+@app.route("/comments", methods=['GET'])
 @jwt_required()
-def create_task_route():
-    currentUser = get_jwt_identity()
-    data        = request.json
-    description = data.get("description")
-    deadline    = data.get("deadline")
-    urgent      = data.get("urgent")
-    targetId    = data.get("targetId")
-    areaId      = data.get("areaId")
+def get_comments_route():
+    params  = request.args.to_dict()
 
-    createdBy, status = get_users(username=currentUser)
-    # TODO handling errors incorrectly
-    if status != 200: return jsonify({"success": False, "data": "Unauthorized"}), 401
+    if "id" not in params or not params["id"].isdigit():
+        return jsonify({"success": False, "data": "Invalid or missing Task ID"}), 400
 
-    if targetId == 0: targetId = None
+    data, status = get_comments(params['id'])
 
-    data, status = create_task(description, deadline, urgent, targetId, areaId, createdBy[0]['id'])
+    if   status == 200: return jsonify({"success": True,  "data": data}), 200
+    elif status == 404: return jsonify({"success": False, "data": "Not Found"}), 404
+    elif status == 400: return jsonify({"success": False, "data": "Bad request"}), 400
+    # UNREACHABLE
+    else:               return jsonify({"success": False, "data": "Invalid request"}), 400
+
+@app.route("/comments", methods=['POST'])
+@jwt_required()
+def create_comments_route():
+    data    = request.json
+    taskId  = data.get("id")
+    userId  = get_jwt_identity()
+    content = data.get("content")
+
+    data, status = create_comment(taskId, userId, content)
 
     if   status == 201: return "", 201
     elif status == 400: return jsonify({"success": False, "data": "Bad request"}), 400
     elif status == 500: return jsonify({"success": False, "data": "Internal server error"}), 500
     # UNREACHABLE
     else:               return jsonify({"success": False, "data": "Internal server error"}), 500
+    # TODO user
 
 @app.route("/", methods=['GET'])
 def home_route():
-    register_user('admin', 'A')
-    register_user('user', 'U')
-    register_password('admin', '123')
     return "TODO(/)"
 
 if __name__ == '__main__':

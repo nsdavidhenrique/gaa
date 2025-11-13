@@ -85,6 +85,10 @@ export const Api = {
         return apiFetch(`/task?id=${id}`, { method: 'GET' }, router)
     },
 
+    async getTaskList(pending, offset = 0, router){
+        return apiFetch(`/taskList?pending=${pending}&offset=${offset}`, { method: 'GET' })
+    },
+
     async updateTask(data, router) {
         return apiFetch('/task', {
             method: 'PATCH',
@@ -92,14 +96,21 @@ export const Api = {
         }, router)
     },
 
-    async getTaskList(pending, offset = 0, router){
-        return apiFetch(`/taskList?pending=${pending}&offset=${offset}`, { method: 'GET' })
-    },
-
     async createTask(data, router) {
-        return apiFetch('/createTask', {
+        return apiFetch('/task', {
             method: 'POST',
             body: JSON.stringify(data)
+        }, router)
+    },
+
+    async getComments(id, router){
+        return apiFetch(`/comments?id=${id}`, { method: 'GET' }, router)
+    },
+
+    async createComment(comment, router){
+        return apiFetch('/comments', {
+            method: 'POST',
+            body: JSON.stringify(comment)
         }, router)
     },
 }

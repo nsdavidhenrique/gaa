@@ -89,13 +89,13 @@ def reset_password(username): # TODO name or id
 
 def get_users(id = None, username = None):
     with db_cursor() as cursor:
-        if   id:   cursor.execute("SELECT id, name, type FROM Users WHERE id = ? ;", (id,))
+        if   id:       cursor.execute("SELECT id, name, type FROM Users WHERE id = ? ;", (id,))
         elif username: cursor.execute("SELECT id, name, type FROM Users WHERE name = ? ;", (username,))
-        else:      cursor.execute("SELECT id, name, type FROM Users;")
+        else:          cursor.execute("SELECT id, name, type FROM Users;")
         rows = cursor.fetchall()
 
     if (id is not None or username is not None) and not rows: return None, 404 
-    else:                                                 return [dict(row) for row in rows], 200
+    else:                                                     return [dict(row) for row in rows], 200
 
 def get_user_and_password(username = None):
     if not username: return None, 400
@@ -235,7 +235,7 @@ def get_comments(taskId):
         return None, 400
 
     query  = '''
-        SELECT c.content, u.name As user
+        SELECT c.*, u.name As user
         FROM Comments As c
         LEFT JOIN Users AS u on u.id = c.userId
         WHERE taskId = ?
@@ -248,7 +248,7 @@ def get_comments(taskId):
     else:        return [dict(row) for row in rows], 200
 
 def create_comment(taskId, userId, content):
-    if not taskId or not userId or not content:      return None, 400
+    if not taskId or not userId or not content: return None, 400
     try:
         userId = int(userId)
         taskId = int(taskId)

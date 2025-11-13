@@ -103,6 +103,8 @@ export default function Login(){
     return(
         <ScreenWrapper style={[styles.centered, { backgroundColor: theme.colors.primary } ]}>
             <View style={[styles.centered, styles.card, {
+                paddingVertical: 40,
+                paddingHorizontal: 25,
                 width: '85%',
                 backgroundColor: theme.colors.background,
             }]}>

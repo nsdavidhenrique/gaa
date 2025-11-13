@@ -53,7 +53,7 @@ export default function TaskForm() {
             return
         }
 
-        const body = await res.json()
+        const body = await response.json()
         if(body.data.length <= 0)
             setUsers([{label: "Todos", value: 0}])
         else
@@ -71,7 +71,7 @@ export default function TaskForm() {
             return
         }
 
-        const body = await res.json()
+        const body = await response.json()
         if(body.data.length <= 0)
             setAreas([{label: "Todos", value: 0}])
         else
