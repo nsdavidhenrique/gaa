@@ -8,15 +8,15 @@ import {
     RefreshControl
 } from 'react-native';
 
-import { Stack, useRouter }    from 'expo-router';
-import React, { useState, useEffect } from 'react'
-import { useFocusEffect }      from '@react-navigation/native';
-
-import { ensureSession, handleSessionExpired } from '../../../services/handleSession'
-import { HOST }          from '../../../utils/config'
 import { ListItem }      from '../../../components/ListItem'
 import { ScreenWrapper } from '../../../components/ScreenWrapper'
 import { CustomButton }  from '../../../components/CustomButton'
+
+import React, { useState, useEffect } from 'react'
+import { Stack, useRouter }           from 'expo-router';
+import { useFocusEffect }             from '@react-navigation/native';
+
+import { Api } from '../../../services/api'
 
 export default function Task() {
     const [loading, setLoading]           = useState(false);
@@ -29,17 +29,9 @@ export default function Task() {
 
     const fetchPending = async () => {
         setLoading(true);
-        const sessionToken = await ensureSession()
 
-        const response = await fetch(`${HOST}/taskList?pending=true`, {
-            method: "GET",
-            headers: {"Authorization": `Bearer ${sessionToken}`}
-        });
-
+        const response = await Api.getTaskList(true, 0, router)
         if(!response.ok){
-            if(response.status == 401 || response.status == 422) handleSessionExpired(router)
-            if(response.status == 400) Alert.alert("Bad request")
-            if(response.status == 500) Alert.alert("Internal Server Error")
             setLoading(false)
             return
         }
@@ -52,17 +44,9 @@ export default function Task() {
     const fetchDone = async () => {
         if(!hasMoreTasks) return
         setLoading(true);
-        const sessionToken = await ensureSession()
 
-        const response = await fetch(`${HOST}/taskList?pending=false&offset=${offset}`, {
-            method: "GET",
-            headers: {"Authorization": `Bearer ${sessionToken}`}
-        });
-
+        const response = await Api.getTaskList(false, offset, router)
         if(!response.ok){
-            if(response.status == 401 || response.status == 422) handleSessionExpired(router)
-            if(response.status == 400) Alert.alert("Bad request")
-            if(response.status == 500) Alert.alert("Internal Server Error")
             setLoading(false)
             return
         }

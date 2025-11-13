@@ -10,24 +10,20 @@ import {
     Platform
 } from 'react-native';
 
-import React from 'react'
-import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form'
-import { useRouter }           from 'expo-router'
-import { useFocusEffect }      from '@react-navigation/native';
-import { useTheme }            from '../../../hooks/useTheme'     
+import DropDownPicker       from 'react-native-dropdown-picker';
+import DateTimePickerModal  from '@react-native-community/datetimepicker'
+import DateTimePicker       from '@react-native-community/datetimepicker'
+import { ScreenWrapper }    from '../../../components/ScreenWrapper'
+import { CustomButton }     from '../../../components/CustomButton'
 
-import DropDownPicker          from 'react-native-dropdown-picker';
-import DateTimePickerModal     from '@react-native-community/datetimepicker'
-import DateTimePicker          from '@react-native-community/datetimepicker'
-
-import { ScreenWrapper } from '../../../components/ScreenWrapper'
-import { CustomButton }  from '../../../components/CustomButton'
+import React, { useState, useEffect } from 'react';
+import { useForm, Controller }        from 'react-hook-form'
+import { useRouter }                  from 'expo-router'
+import { useFocusEffect }             from '@react-navigation/native';
+import { useTheme }                   from '../../../hooks/useTheme'     
 
 import { commonStyles } from '../../../styles/commonStyles'
 
-import { HOST }                 from '../../../utils/config'
-import { ensureSession, handleSessionExpired } from '../../../services/handleSession'
 import { Api } from '../../../services/api'
 
 export default function TaskForm() {
@@ -51,15 +47,17 @@ export default function TaskForm() {
     const getUsers = async () => {
         setLoading(true)
 
-        const res  = await Api.getUsers(router)
-        if(res.ok){
-            const body = await res.json()
-            if(body.data.length <= 0)
-                setUsers([{label: "Todos", value: 0}])
-            else
-                setUsers([{label: "Todos", value: 0}, ...body.data.map(item => ({ label: item.name, value: item.id }))]);
+        const response  = await Api.getUsers(router)
+        if(!response.ok){
+            setLoading(false)
+            return
         }
-        // TODO handle body == null
+
+        const body = await res.json()
+        if(body.data.length <= 0)
+            setUsers([{label: "Todos", value: 0}])
+        else
+            setUsers([{label: "Todos", value: 0}, ...body.data.map(item => ({ label: item.name, value: item.id }))]);
 
         setLoading(false)
     };
@@ -67,15 +65,17 @@ export default function TaskForm() {
     const getAreas = async () => {
         setLoading(true)
 
-        const res  = await Api.getAreas(router)
-        if(res.ok){
-            const body = await res.json()
-            if(body.data.length <= 0)
-                setAreas([{label: "Todos", value: 0}])
-            else
-                setAreas(body.data.map(item => ({ label: item.name, value: item.id })));
+        const response = await Api.getAreas(router)
+        if(!response.ok){
+            setLoading(false)
+            return
         }
-        // TODO handle body == null
+
+        const body = await res.json()
+        if(body.data.length <= 0)
+            setAreas([{label: "Todos", value: 0}])
+        else
+            setAreas(body.data.map(item => ({ label: item.name, value: item.id })));
 
         setLoading(false)
     };
@@ -95,12 +95,14 @@ export default function TaskForm() {
     const postTask = async (data) => {
         setLoading(true)
 
-        const res = await Api.createTask(data, router)
-        if(res.ok){
-            reset()
-            router.navigate("tasks")
+        const response = await Api.createTask(data, router)
+        if(!response.ok){
+            setLoading(false)
+            return
         }
 
+        reset()
+        router.navigate("tasks")
         setLoading(false)
     };
 
@@ -198,14 +200,12 @@ export default function TaskForm() {
 
                                 {showPicker && (
                                     <DateTimePicker
-                                        // key força remount quando mudamos pickerMode (útil no Android)
                                         key={pickerMode}
                                         value={tempDate}
-                                        mode={pickerMode} // 'date' | 'time' | 'datetime'
+                                        mode={pickerMode}
                                         is24Hour={true}
                                         display={Platform.OS === 'ios' ? 'inline' : 'default'}
                                         onChange={(event, selected) => {
-                                            // Se o usuário cancelou (Android)
                                             if (Platform.OS === 'android') {
                                                 if (event?.type === 'dismissed') {
                                                     setShowPicker(false);
@@ -213,14 +213,11 @@ export default function TaskForm() {
                                                 }
 
                                                 if (pickerMode === 'date') {
-                                                    // recebeu a data — salva temporariamente e abre o time picker
                                                     const chosenDate = selected || tempDate;
                                                     setTempDate(chosenDate);
-                                                    // troca para time e reabre o picker
                                                     setPickerMode('time');
                                                     setShowPicker(true);
                                                 } else {
-                                                    // recebeu a hora — combina data + hora e envia para o form
                                                     const chosenTime = selected || tempDate;
                                                     const finalDate = new Date(tempDate);
                                                     finalDate.setHours(chosenTime.getHours(), chosenTime.getMinutes(), 0, 0);
@@ -229,14 +226,11 @@ export default function TaskForm() {
                                                 }
                                                 return;
                                             }
-
-                                            // iOS: apenas atualiza tempDate enquanto altera o picker inline
                                             if (selected) setTempDate(selected);
                                         }}
                                     />
                                 )}
 
-                                {/* iOS: confirma/ cancela */}
                                 {Platform.OS === 'ios' && showPicker && (
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
                                         <CustomButton title="Cancelar" onPress={() => setShowPicker(false)} />

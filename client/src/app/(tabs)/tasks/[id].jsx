@@ -4,20 +4,18 @@ import {
     View,
 } from 'react-native';
 
-import { Stack, useLocalSearchParams } from 'expo-router'
-
-import { useState, useEffect } from 'react';
-import { useRouter }           from 'expo-router'
-import { useTheme }            from '../../../hooks/useTheme'     
-
 import { ScreenWrapper } from '../../../components/ScreenWrapper'
 import { CustomButton }  from '../../../components/CustomButton'
 import { TaskDetail }    from '../../../components/taskDetail'
 
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
+import { useState, useEffect } from 'react';
+import { useTheme }            from '../../../hooks/useTheme'     
+
 import { commonStyles } from '../../../styles/commonStyles'
 
-import { HOST }          from '../../../utils/config'
-import { ensureSession } from '../../../services/handleSession'
+import { Api } from '../../../services/api'
+
 
 export default function TaskDetailScreen() {
     const theme = useTheme();
@@ -30,47 +28,30 @@ export default function TaskDetailScreen() {
 
     const fetchTask = async () => {
         setLoading(true)
-        const sessionToken = await ensureSession()
 
-        const response = await fetch(`${HOST}/task?id=${id}`, {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${sessionToken}`
-            }
-        })
-
+        const response = await Api.getTask(id, router)
         if(!response.ok){
-            if(response.status == 401 || response.status == 422) handleSessionExpired(router)
-            if(response.status == 400) Alert.alert("Bad request")
-            if(response.status == 500) Alert.alert("Internal server error")
+            if(reponse.status == 404) Alert.alert("Tarefa não encontrada")
+            setLoading(false)
+            return
         }
 
         const json = await response.json();
-        setTask(json.data);
-        setLoading(false);
+        setTask(json.data)
+        setLoading(false)
     }
 
     const updateTaskStatus = async (newStatus) => {
-        setLoading(true);
-        const sessionToken = await ensureSession()
+        setLoading(true)
 
-        const response = await fetch(`${HOST}/task`, {
-            method: "PATCH",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${sessionToken}`,
-            },
-            body: JSON.stringify({id: id, status: newStatus}) // TODO by
-        });
-
+        const response = await Api.updateTask({id: id, status: newStatus}, router) // TODO by
         if(!response.ok){
-            if(response.status == 401 || response.status == 422) handleSessionExpired(router)
-            if(response.status == 400) Alert.alert("Bad request")
-            if(response.status == 500) Alert.alert("Internal server error")
+            setLoading(false)
+            return
         }
 
-        setTask(prev => ({...prev, status: newStatus})) // TODO por, iniciado em
-        setLoading(false);
+        setTask(prev => ({...prev, status: newStatus})) // TODO por, iniciado em, fetchTask()
+        setLoading(false)
     }
 
     useEffect(() => {

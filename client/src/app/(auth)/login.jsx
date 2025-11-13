@@ -1,24 +1,21 @@
 import {
     Text,
     View,
-    Button,
     TextInput,
-    TouchableWithoutFeedback,
-    Keyboard,
     Alert
 } from 'react-native';
+
+import { ScreenWrapper } from '../../components/ScreenWrapper'
+import { CustomButton }  from '../../components/CustomButton'
 
 import { useState, useEffect } from 'react'
 import { useRouter }           from 'expo-router';
 import { useTheme }            from '../../hooks/useTheme.js'
 
-import { HOST }          from '../../utils/config'
 import { commonStyles }  from '../../styles/commonStyles';
-import { ScreenWrapper } from '../../components/ScreenWrapper'
-import { CustomButton }  from '../../components/CustomButton'
 
-import { login, getSessionToken, isValidSession } from '../../services/handleSession'
-
+import { Api }   from '../../services/api'
+import { login } from '../../services/handleSession'
 
 export default function Login(){
     const [name,            setName]            = useState("")
@@ -42,31 +39,15 @@ export default function Login(){
         setHasPassword(false)
     }, [name])
 
-    // TODO this is broken
-    useEffect(() => {
-        //const loginIfSessionIsOpened = async () => {
-        //    let session = await getSessionToken()
-        //    if(session) await login(router, session)
-        //}
-        //loginIfSessionIsOpened()
-    }, [router])
-
     const submit = async () => {
         if(name == "") {
             Alert.alert("Insira o usuário")
             return
         }
 
-        let response = await fetch(`${HOST}/login`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({'username': name})
-        })
-
+        let response = await Api.login(name, router)
         if(!response.ok){
             if(response.status == 404) Alert.alert("Usuário inválido")
-            if(response.status == 400) Alert.alert("Bad request")
-            if(response.status == 500) Alert.alert("Internal Server Error")
             return
         }
 
@@ -83,16 +64,9 @@ export default function Login(){
             return
         }
 
-        let response = await fetch(`${HOST}/authenticate`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({'username': name, 'password': password})
-        })
-
+        let response = await Api.authenticate(name, password, router)
         if(!response.ok){
-            if(response.status == 400) Alert.alert("Bad request")
             if(response.status == 401) Alert.alert("Usuário ou senha inválida")
-            if(response.status == 500) Alert.alert("Internal Server Error")
             setPassword("")
             return
         }
@@ -115,35 +89,30 @@ export default function Login(){
             return
         }
 
-        let response = await fetch(`${HOST}/createPassword`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({'username': name, 'password': newPassword})
-        })
-
+        let response = await Api.createPassword(name, newPassword, router)
         if(!response.ok){
-            if(response.status == 400) Alert.alert("Bad request")
             if(response.status == 404) Alert.alert("Usuário inválido")
-            if(response.status == 500) Alert.alert("Internal Server Error")
             return
         }
 
-        setPassword(newPassword)
-        await authenticate()
+        let res   = await Api.authenticate(name, newPassword, router)
+        let token = await res.json()
+        await login(router, token.data);
     }
 
-    // TODO view centered nao responsível
     return(
-        <ScreenWrapper style={{justifyContent: 'center', alignItems: 'center'}}>
-            <View style={[styles.centered, {
-                width: 300,
-                height: 300,
-                backgroundColor: theme.colors.secondary,
-                borderRadius: 40
+        <ScreenWrapper style={[styles.centered, { backgroundColor: theme.colors.primary } ]}>
+            <View style={[styles.centered, styles.card, {
+                width: '85%',
+                backgroundColor: theme.colors.background,
             }]}>
-                <View style={{paddingBottom: 8}}>
+                <View style = {{ paddingBottom: 15 }}>
+                    <Text style={styles.titleText}>Entrar</Text>
+                </View>
+
+                <View style={{ paddingBottom: 15, width: '100%' }}>
                     <TextInput
-                        style={[styles.input,{width: 200}]}
+                        style={[styles.input,{alignSelf: 'stretch'}]}
                         placeholder="Usuario"
                         value={name}
                         onChangeText={setName}
@@ -151,10 +120,10 @@ export default function Login(){
                 </View>
 
                 {askedPassword && (
-                    <View style={{ paddingBottom: 8 }}>
+                    <View style={{paddingBottom: 15, width:'100%'}}>
                         {hasPassword ? (
                             <TextInput
-                                style={[styles.input, { width: 200 }]}
+                                style={[styles.input, {alignSelf: 'stretch'}]}
                                 placeholder="Senha"
                                 secureTextEntry
                                 value={password}
@@ -163,14 +132,14 @@ export default function Login(){
                         ) : (
                             <>
                                 <TextInput
-                                    style={[styles.input, { width: 200, marginBottom: 8 }]}
+                                    style={[styles.input, {alignSelf: 'stretch', marginBottom: 8}]}
                                     placeholder="Nova Senha"
                                     secureTextEntry
                                     value={newPassword}
                                     onChangeText={setNewPassword}
                                 />
                                 <TextInput
-                                    style={[styles.input, { width: 200 }]}
+                                    style={[styles.input, {alignSelf: 'stretch'}]}
                                     placeholder="Confirmar Senha"
                                     secureTextEntry
                                     value={confirmPassword}
@@ -181,7 +150,7 @@ export default function Login(){
                     </View>
                 )}
                 <CustomButton
-                    style={[commonStyles.button, {width: 100}]}
+                    style={[commonStyles.button, {width: '100%'}]}
                     title="Entrar"
                     onPress={async () => {
                         setLoading(true);

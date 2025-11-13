@@ -2,7 +2,7 @@ import { Alert } from 'react-native'
 import { HOST } from '../utils/config'
 import { ensureSession, handleSessionExpired } from './handleSession'
 
-async function apiFetch(endpoint, options = {}, router, errMsg){
+async function apiFetch(endpoint, options = {}, router){
     const token = await ensureSession()
 
     const response = await fetch(`${HOST}${endpoint}`, {
@@ -16,13 +16,12 @@ async function apiFetch(endpoint, options = {}, router, errMsg){
 
     if (!response.ok) {
         switch(response.status){
-            case 400: Alert.alert(errMsg + ": Bad request");                   break;
-            case 401: handleSessionExpired(router);                         break;
-            case 404: Alert.alert(errMsg + ": Valor inválido");                break;
-            case 409: Alert.alert(errMsg + ": Valor repetido");                break;
-            case 422: handleSessionExpired(router);                         break;
-            case 500: Alert.alert(errMsg + ": Internal Server Error");         break;
-            default:  Alert.alert(errMsg + `: HTTP Code: ${response.status}`); break;
+            case 400: Alert.alert("Bad request");                   break;
+            case 401: handleSessionExpired(router);                 break;
+            case 422: handleSessionExpired(router);                 break;
+            case 500: Alert.alert("Internal Server Error");         break;
+            //case 404: Alert.alert(errMsg + ": Valor inválido");                break;
+            //case 409: Alert.alert(errMsg + ": Valor repetido");                break;
         }
     }
 
@@ -31,34 +30,77 @@ async function apiFetch(endpoint, options = {}, router, errMsg){
 
 
 export const Api = {
-  async getUser(name, router) {
-    return apiFetch(`/users?name=${name}`, { method: 'GET' }, router, `Erro ao buscar o usuário ${name}`)
-  },
+    async login(name, router) {
+        return apiFetch(`/login`, {
+            method: 'POST',
+            body: JSON.stringify({'username': name})
+        }, router)
+    },
 
-  async getUsers(router) {
-    return apiFetch('/users', { method: 'GET' }, router, "Erro ao buscar usuários")
-  },
+    async authenticate(name, password, router) {
+        return apiFetch(`/authenticate`, {
+            method: 'POST',
+            body: JSON.stringify({'username': name, 'password': password})
+        }, router)
+    },
 
-  async createUser(data, router) {
-    return apiFetch('/users', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }, router, "Erro ao criar usuário")
-  },
+    async createUser(name, router) {
+        return apiFetch('/createUser', {
+            method: 'POST',
+            body: JSON.stringify({'username': name}),
+        }, router)
+    },
 
-  async getArea(name, router) {
-    return apiFetch(`/areas?name=${name}`, { method: 'GET' }, router, `Erro ao buscar a area ${name}`)
-  },
+    async createPassword(name, password, router) {
+        return apiFetch(`/createPassword`, {
+            method: 'POST',
+            body: JSON.stringify({'username': name, 'password': password})
+        }, router)
+    },
 
-  async getAreas(router) {
-    return apiFetch('/areas', { method: 'GET' }, router, "Erro ao buscar areas")
-  },
+    async resetPassword(name, router) {
+        return apiFetch('/resetPassword', {
+            method: 'POST',
+            body: JSON.stringify({'username': name}),
+        }, router)
+    },
 
-  async createTask(data, router) {
-    return apiFetch('/createTask', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }, router, "Erro ao criar Tarefa")
-  },
+    async getUser(name, router) {
+        return apiFetch(`/users?name=${name}`, { method: 'GET' }, router)
+    },
+
+    async getUsers(router) {
+        return apiFetch('/users', { method: 'GET' }, router)
+    },
+
+    async getArea(name, router) {
+        return apiFetch(`/areas?name=${name}`, { method: 'GET' }, router)
+    },
+
+    async getAreas(router) {
+        return apiFetch('/areas', { method: 'GET' }, router)
+    },
+
+    async getTask(id, router) {
+        return apiFetch(`/task?id=${id}`, { method: 'GET' }, router)
+    },
+
+    async updateTask(data, router) {
+        return apiFetch('/task', {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        }, router)
+    },
+
+    async getTaskList(pending, offset = 0, router){
+        return apiFetch(`/taskList?pending=${pending}&offset=${offset}`, { method: 'GET' })
+    },
+
+    async createTask(data, router) {
+        return apiFetch('/createTask', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        }, router)
+    },
 }
 

@@ -5,74 +5,47 @@ import {
     Button
 } from 'react-native';
 
-import { useRouter } from 'expo-router'
-import { useState }  from 'react'
-
 import { ScreenWrapper } from '../../../components/ScreenWrapper'
 import { CustomButton }  from '../../../components/CustomButton'
 
-import { HOST }   from '../../../utils/config'
+import { useRouter } from 'expo-router'
+import { useState }  from 'react'
 
-import { logout, ensureSession, handleSessionExpired } from '../../../services/handleSession'
+import { Api }    from '../../../services/api'
+import { logout } from '../../../services/handleSession'
 
 export default function Settings() {
     const [loading, setLoading] = useState(false)
     const router = useRouter()
 
-    const newUser = async (text) => {
-        const sessionToken = await ensureSession()
-
-        if(text == "") {
+    const newUser = async (name) => {
+        if(name == "") {
             Alert.alert("É necessario informar um nome de usuário")
             return
         }
 
-        let response = await fetch(`${HOST}/createUser`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                "Authorization": `Bearer ${sessionToken}`,
-            },
-            body: JSON.stringify({'username': text})
-        })
-
+        let response = await Api.createUser(name, router)
         if(!response.ok){
-            if(response.status == 400) Alert.alert("Bad request")
-            if(response.status == 401) handleSessionExpired(router)
             if(response.status == 409) Alert.alert("Usuário já existe")
-            if(response.status == 500) Alert.alert("Internal Server Error")
             return
         }
 
         Alert.alert("Usuário criado com sucesso")
     }
 
-    const resetPassword = async (text) => {
-        const sessionToken = await ensureSession()
-
-        if(text == "") {
+    const resetPassword = async (name) => {
+        if(name == "") {
             Alert.alert("É necessario informar um nome de usuário")
             return
         }
 
-        let response = await fetch(`${HOST}/resetPassword`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                "Authorization": `Bearer ${sessionToken}`,
-            },
-            body: JSON.stringify({'username': text})
-        })
-
+        let response = await Api.resetPassword(name, router)
         if(!response.ok){
-            if(response.status == 400) Alert.alert("Bad request")
-            if(response.status == 401) handleSessionExpired(router)
             if(response.status == 404) Alert.alert("Usuário não encontrado")
-            if(response.status == 500) Alert.alert("Internal Server Error")
             return
         }
 
-        Alert.alert(`Senha do usuário ${text} resetado com sucesso.`)
+        Alert.alert(`Senha do usuário ${name} resetado com sucesso.`)
     }
 
     const newUserPrompt = () => {
@@ -81,7 +54,7 @@ export default function Settings() {
             "Novo usuário",
             "Insira o nome do novo Usuário",
             [
-                {text: "Criar", onPress: async (text) => { await newUser(text) }},
+                {text: "Criar", onPress: async (name) => {await newUser(name)}},
                 {text: "Cancelar" }
             ]
         )
@@ -94,12 +67,11 @@ export default function Settings() {
             "Resetar senha",
             "Insira o nome do Usuário que deseja resetar a senha",
             [
-                {text: "Resetar", onPress: async (text) => { await resetPassword(text) }},
+                {text: "Resetar", onPress: async (name) => {await resetPassword(name)}},
                 {text: "Cancelar" }
             ]
         )
         setLoading(false)
-
     }
 
     return (
