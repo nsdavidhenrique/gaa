@@ -1,6 +1,5 @@
 import {
     View,
-    ScrollView,
     Text,
     StyleSheet
 } from 'react-native'
@@ -14,60 +13,84 @@ import { isLate }       from '../utils/isLate'
 import { brDateTime }   from '../utils/brDateTime'
 
 export const TaskDetail = ({ task }) => {
-    const theme  = useTheme()
+    const theme = useTheme()
     const styles = commonStyles(theme)
+    const local = getStyles(theme)
 
+    return (
+        <View style={{ marginBottom: 12 }}>
+            
+            <DetailBlock label="Área"        value={task.area} />
+            <DetailBlock label="Responsável" value={task.target ? task.target : "Todos"} />
+            <DetailBlock label="Descrição"   value={task.description} />
 
-    const defaultStyle = StyleSheet.create({
-        fieldContainer: {
-            paddingTop: 10,
-            paddingBottom: 10,
-            marginLeft: 10,
-            marginRight: 10,
-            borderBottomWidth: 1,
-            borderBottomColor: theme.colors.borderColor,
-        },
-        isLate: {
-            color: theme.colors.alert,
-            marginLeft: 10,
-        },
-        statusContainer:{
-            ...styles.row,
-            paddingTop: 10,
-        }
-    });
+            <View style={local.block}>
+                <Text style={styles.subTitleText}>Status</Text>
 
-    // TODO urgent is not on the list
-    return(
-        <ScrollView>
-            <View style={defaultStyle.fieldContainer}>
-                <Text style={styles.subTitleText}>Área:</Text>
-                <Text style={styles.titleText}>{task.area}</Text>
-            </View>
-            <View style={defaultStyle.fieldContainer}>
-                <Text style={styles.subTitleText}>Responsável:</Text>
-                <Text style={styles.titleText}>{task.target ? task.target: 'Todos'}</Text>
-            </View>
-            <View style={defaultStyle.fieldContainer}>
-                <Text style={styles.subTitleText}>Descrição:</Text>
-                <Text style={styles.titleText}>{task.description}</Text>
-            </View>
-            <View style={defaultStyle.fieldContainer}>
-                <Text style={styles.subTitleText}>Status: </Text>
-                <View style={defaultStyle.statusContainer}>
+                <View style={local.statusRow}>
                     <Status status={task.status} />
-                    {(task.status == "Em Andamento" || task.status == "Finalizado") ? <Text style={styles.subTitleText}> Por: {task.updatedBy}</Text> : ""}
+                    {(task.status === "Em Andamento" || task.status === "Finalizado") && (
+                        <Text style={styles.labelText}>Por: {task.updatedBy}</Text>
+                    )}
                 </View>
-                {task.status == "Em Andamento" ? <Text style={styles.subTitleText}> Iniciado em: {brDateTime(task.lastUpdate)}</Text>   : ""}
-                {task.status == "Finalizado"   ? <Text style={styles.subTitleText}> Finalizado em: {brDateTime(task.lastUpdate)}</Text> : ""}
+
+                {task.status === "Em Andamento" && (
+                    <Text style={styles.labelText}>Iniciado em: {brDateTime(task.lastUpdate)}</Text>
+                )}
+
+                {task.status === "Finalizado" && (
+                    <Text style={styles.labelText}>Finalizado em: {brDateTime(task.lastUpdate)}</Text>
+                )}
             </View>
-            <View style={defaultStyle.fieldContainer}>
-                <Text style={styles.subTitleText}>Criado por: {task.createdBy}</Text>
-                <Text style={styles.subTitleText}>Em: {brDateTime(task.createdAt)}</Text>
-                <Text style={styles.subTitleText}>
-                    Prazo: {(new Date(task.deadline)).toLocaleString("pt-BR")} {isLate(task.deadline) && <Text style={defaultStyle.isLate}> Atrasado!</Text>}
+
+            <View style={local.block}>
+                <Text style={styles.subTitleText}>Criado por</Text>
+                <Text style={styles.bodyText}>{task.createdBy}</Text>
+                <Text style={styles.bodyText}>Em:      {brDateTime(task.createdAt)}</Text>
+
+                <Text style={styles.bodyText}>
+                    Prazo: {brDateTime(task.deadline)}
+                    {isLate(task.deadline) && (
+                        <Text style={local.late}>  Atrasado!</Text>
+                    )}
                 </Text>
             </View>
-        </ScrollView>
+
+        </View>
     )
 }
+
+const DetailBlock = ({ label, value }) => {
+    const theme = useTheme()
+    const styles = commonStyles(theme)
+    const local = getStyles(theme)
+
+    return (
+        <View style={local.block}>
+            <Text style={styles.subTitleText}>{label}</Text>
+            <Text style={styles.bodyText}>{value}</Text>
+        </View>
+    )
+}
+
+const getStyles = (theme) =>
+    StyleSheet.create({
+        block: {
+            paddingVertical: 12,
+            borderBottomWidth: 0.3,
+            borderBottomColor: theme.colors.borderColor,
+        },
+
+        statusRow: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            marginTop: 6,
+            marginBottom: 4,
+        },
+
+        late: {
+            color: theme.colors.alert,
+            fontWeight: "600",
+        },
+    })
