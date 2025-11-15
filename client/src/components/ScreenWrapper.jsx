@@ -1,24 +1,22 @@
-import React from 'react'
-import { Keyboard, Pressable } from 'react-native'
+import { Keyboard, Pressable }            from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
-import { StatusBar } from 'expo-status-bar'
-import { TapGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StatusBar }                      from 'expo-status-bar'
 
-import { useTheme } from '../hooks/useTheme'
+import { useTheme }     from '../hooks/useTheme'
 import { commonStyles } from '../styles/commonStyles'
 
 export const ScreenWrapper = ({ children, style }) =>{
-    const theme = useTheme();
+    const theme = useTheme()
     const styles = commonStyles(theme)
 
     return(
-        <GestureHandlerRootView>
-            <SafeAreaProvider>
-                <StatusBar style="auto"/>
-                <Pressable style={{ flex: 1 }} pointerEvents="auto" onPress={Keyboard.dismiss}>
-                    <SafeAreaView style={[styles.screen, style]}>{children}</SafeAreaView>
-                </Pressable>
-            </SafeAreaProvider>
-        </GestureHandlerRootView>
+        <SafeAreaProvider>
+            <StatusBar style="auto"/>
+            <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss}>
+                <SafeAreaView style={[styles.screen, style]}>
+                    {children}
+                </SafeAreaView>
+            </Pressable>
+        </SafeAreaProvider>
     )
 }

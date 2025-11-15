@@ -3,16 +3,16 @@ import {
     View,
     TextInput,
     Alert
-} from 'react-native';
+} from 'react-native'
 
 import { ScreenWrapper } from '../../components/ScreenWrapper'
 import { CustomButton }  from '../../components/CustomButton'
 
 import { useState, useEffect } from 'react'
-import { useRouter }           from 'expo-router';
+import { useRouter }           from 'expo-router'
 import { useTheme }            from '../../hooks/useTheme.js'
 
-import { commonStyles }  from '../../styles/commonStyles';
+import { commonStyles }  from '../../styles/commonStyles'
 
 import { Api }   from '../../services/api'
 import { login } from '../../services/handleSession'
@@ -72,7 +72,7 @@ export default function Login(){
         }
         
         let body = await response.json()
-        await login(router, body.data);
+        await login(router, body.data)
     }
 
     const createPassword = async () => {
@@ -97,7 +97,7 @@ export default function Login(){
 
         let res   = await Api.authenticate(name, newPassword, router)
         let token = await res.json()
-        await login(router, token.data);
+        await login(router, token.data)
     }
 
     return(
@@ -155,13 +155,13 @@ export default function Login(){
                     style={[commonStyles.button, {width: '100%'}]}
                     title="Entrar"
                     onPress={async () => {
-                        setLoading(true);
+                        setLoading(true)
                         try {
-                            if (!askedPassword)   await submit();
-                            else if (hasPassword) await authenticate();
-                            else                  await createPassword();
+                            if (!askedPassword)   await submit()
+                            else if (hasPassword) await authenticate()
+                            else                  await createPassword()
                         } finally {
-                            setLoading(false);
+                            setLoading(false)
                         }
                     }}
                 />

@@ -79,5 +79,5 @@ export const commonStyles = (theme) => {
             opacity: 0.5
         }
 
-    });
-};
+    })
+}

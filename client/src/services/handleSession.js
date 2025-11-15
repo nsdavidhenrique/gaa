@@ -1,13 +1,14 @@
-import { Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native'
+
+import { useRouter } from 'expo-router'
+import AsyncStorage  from '@react-native-async-storage/async-storage'
 
 // Warning session's functions does not handle rare errors related to full or currupted storage
 export async function createSession(access_token){
     await AsyncStorage.setItem('@jwt-access_token', access_token)
 }
 
-export async function getSessionToken(){
+export async function getSession(){
     const access_token = await AsyncStorage.getItem('@jwt-access_token')
     return access_token
 }
@@ -40,12 +41,12 @@ export async function handleSessionExpired(router){
 }
 
 export async function ensureSession(router){
-    const sessionToken = await getSessionToken();
+    const sessionToken = await getSession()
 
     if (!isValidSession(sessionToken)){
-        await handleSessionExpired(router);
-        return null;
+        await handleSessionExpired(router)
+        return null
     }
 
-    return sessionToken;
+    return sessionToken
 }

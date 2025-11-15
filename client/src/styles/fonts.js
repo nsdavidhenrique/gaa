@@ -1,4 +1,5 @@
 import { PixelRatio } from 'react-native'
+
 const scale = PixelRatio.getFontScale()
 
 export default {

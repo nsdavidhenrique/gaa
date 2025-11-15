@@ -1,14 +1,10 @@
-import {
-    View,
-    Text,
-    StyleSheet
-} from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
+import { Status }                 from './Status'
 
 import { useState, useEffect } from 'react'
 import { useTheme}             from '../hooks/useTheme'
 
 import { commonStyles } from '../styles/commonStyles'
-import { Status }       from './Status'
 import { isLate }       from '../utils/isLate'
 import { brDateTime }   from '../utils/brDateTime'
 

@@ -182,14 +182,15 @@ def get_task_details(id):
     else:   return None, 404
 
 def create_task(description, deadline, urgent, targetId, areaId, createdBy):
-    if not description or not deadline or not targetId or not areaId or not createdBy: return None, 400
+    if not description or not deadline or not areaId or not createdBy: return None, 400
 
     try:
-        targetId  = int(targetId)
+        if targetId: targetId = int(targetId)
+        else:        targetId = None
         areaId    = int(areaId)
         createdBy = int(createdBy)
     except Exception as e:
-        print(f'EXCEPTION: create_task(description={description}, deadline={deadline}, urgent={urgent}, targetId={targetId}, areaId={areaId}, createBy={createdBy}): {e}')
+        print(f'EXCEPTION: create_task(): {e}')
         return None, 400
 
     query = '''

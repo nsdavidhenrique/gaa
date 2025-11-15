@@ -1,11 +1,7 @@
-import {
-    View,
-    Text,
-    StyleSheet
-} from 'react-native';
+import { View, Text, StyleSheet } from 'react-native'
 
 import { useTheme }     from '../hooks/useTheme.js'
-import { commonStyles } from '../styles/commonStyles';
+import { commonStyles } from '../styles/commonStyles'
 import { brDateTime }   from '../utils/brDateTime'
 
 export const Comment = ({ data }) => {

@@ -1,3 +1,5 @@
+import React from 'react'
+
 import {
     Alert,
     Modal,
@@ -8,41 +10,40 @@ import {
     Switch,
     StyleSheet,
     Platform
-} from 'react-native';
+} from 'react-native'
 
-import DropDownPicker       from 'react-native-dropdown-picker';
-import DateTimePickerModal  from '@react-native-community/datetimepicker'
+import DropDownPicker       from 'react-native-dropdown-picker'
 import DateTimePicker       from '@react-native-community/datetimepicker'
 import { ScreenWrapper }    from '../../../components/ScreenWrapper'
 import { CustomButton }     from '../../../components/CustomButton'
 
-import React, { useState, useEffect } from 'react';
-import { useForm, Controller }        from 'react-hook-form'
-import { useRouter }                  from 'expo-router'
-import { useFocusEffect }             from '@react-navigation/native';
-import { useTheme }                   from '../../../hooks/useTheme'     
+import { useState, useEffect } from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { useRouter }           from 'expo-router'
+import { useFocusEffect }      from '@react-navigation/native'
+import { useTheme }            from '../../../hooks/useTheme'
 
 import { commonStyles } from '../../../styles/commonStyles'
 
 import { Api } from '../../../services/api'
 
 export default function TaskForm() {
-    const theme = useTheme();
-    const styles = commonStyles(theme);
-    const router = useRouter();
+    const theme  = useTheme()
+    const styles = commonStyles(theme)
+    const router = useRouter()
 
-    const [loading, setLoading]       = useState(false);
+    const [loading, setLoading]       = useState(false)
 
-    const [showPicker, setShowPicker] = useState(false);
-    const [tempDate, setTempDate]     = useState(new Date());
-    const [pickerMode, setPickerMode] = useState('date');
+    const [showPicker, setShowPicker] = useState(false)
+    const [tempDate, setTempDate]     = useState(new Date())
+    const [pickerMode, setPickerMode] = useState('date')
 
-    const [users, setUsers]           = useState([]);
-    const [areas, setAreas]           = useState([]);
-    const [userOpen, setUserOpen]     = useState(false);
-    const [areaOpen, setAreaOpen]     = useState(false);
+    const [users, setUsers]           = useState([])
+    const [areas, setAreas]           = useState([])
+    const [userOpen, setUserOpen]     = useState(false)
+    const [areaOpen, setAreaOpen]     = useState(false)
 
-    const {control, handleSubmit, reset, formState: {errors} } = useForm();
+    const {control, handleSubmit, reset, formState: {errors} } = useForm()
 
     const getUsers = async () => {
         setLoading(true)
@@ -57,10 +58,10 @@ export default function TaskForm() {
         if(body.data.length <= 0)
             setUsers([{label: "Todos", value: 0}])
         else
-            setUsers([{label: "Todos", value: 0}, ...body.data.map(item => ({ label: item.name, value: item.id }))]);
+            setUsers([{label: "Todos", value: 0}, ...body.data.map(item => ({ label: item.name, value: item.id }))])
 
         setLoading(false)
-    };
+    }
 
     const getAreas = async () => {
         setLoading(true)
@@ -75,22 +76,22 @@ export default function TaskForm() {
         if(body.data.length <= 0)
             setAreas([{label: "Todos", value: 0}])
         else
-            setAreas(body.data.map(item => ({ label: item.name, value: item.id })));
+            setAreas(body.data.map(item => ({ label: item.name, value: item.id })))
 
         setLoading(false)
-    };
+    }
 
     useFocusEffect(
         React.useCallback(() => {
-            getUsers();
-            getAreas();
+            getUsers()
+            getAreas()
         }, [])
-    );
+    )
 
     useEffect(() => {
-        getUsers();
-        getAreas();
-    }, []);
+        getUsers()
+        getAreas()
+    }, [])
 
     const postTask = async (data) => {
         setLoading(true)
@@ -104,7 +105,7 @@ export default function TaskForm() {
         reset()
         router.navigate("tasks")
         setLoading(false)
-    };
+    }
 
     const onSubmit = (data) => {
         Alert.alert(
@@ -115,18 +116,18 @@ export default function TaskForm() {
                 {text: "Confirmar", onPress: () => {postTask(data)}}
             ]
         )
-    };
+    }
 
     const openPicker = (currentValue, setTempDate, setPickerMode, setShowPicker) => {
-        setTempDate(currentValue ?? new Date());
+        setTempDate(currentValue ?? new Date())
         if (Platform.OS === 'android') {
-            setPickerMode('date');
-            setShowPicker(true);
+            setPickerMode('date')
+            setShowPicker(true)
         } else {
-            setPickerMode('datetime');
-            setShowPicker(true);
+            setPickerMode('datetime')
+            setShowPicker(true)
         }
-    };
+    }
 
   return (
         <ScreenWrapper>
@@ -208,33 +209,44 @@ export default function TaskForm() {
                                         onChange={(event, selected) => {
                                             if (Platform.OS === 'android') {
                                                 if (event?.type === 'dismissed') {
-                                                    setShowPicker(false);
-                                                    return;
+                                                    setShowPicker(false)
+                                                    return
                                                 }
 
                                                 if (pickerMode === 'date') {
-                                                    const chosenDate = selected || tempDate;
-                                                    setTempDate(chosenDate);
-                                                    setPickerMode('time');
-                                                    setShowPicker(true);
+                                                    const chosenDate = selected || tempDate
+                                                    setTempDate(chosenDate)
+                                                    setPickerMode('time')
+                                                    setShowPicker(true)
                                                 } else {
-                                                    const chosenTime = selected || tempDate;
-                                                    const finalDate = new Date(tempDate);
-                                                    finalDate.setHours(chosenTime.getHours(), chosenTime.getMinutes(), 0, 0);
-                                                    onChange(finalDate);
-                                                    setShowPicker(false);
+                                                    const chosenTime = selected || tempDate
+                                                    const finalDate = new Date(tempDate)
+                                                    finalDate.setHours(chosenTime.getHours(), chosenTime.getMinutes(), 0, 0)
+                                                    onChange(finalDate)
+                                                    setShowPicker(false)
                                                 }
-                                                return;
+                                                return
                                             }
-                                            if (selected) setTempDate(selected);
+                                            if (selected) setTempDate(selected)
                                         }}
                                     />
                                 )}
 
                                 {Platform.OS === 'ios' && showPicker && (
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
-                                        <CustomButton title="Cancelar" onPress={() => setShowPicker(false)} />
-                                        <CustomButton title="Confirmar" onPress={() => { onChange(tempDate); setShowPicker(false); }} />
+                                        <CustomButton
+                                            title="Cancelar"
+                                            onPress={() =>
+                                                setShowPicker(false)
+                                            }
+                                        />
+                                        <CustomButton
+                                            title="Confirmar"
+                                            onPress={() => {
+                                                onChange(tempDate)
+                                                setShowPicker(false)
+                                            }}
+                                        />
                                     </View>
                                 )}
 
@@ -280,5 +292,5 @@ export default function TaskForm() {
                 <CustomButton title="Criar" onPress={handleSubmit(onSubmit)} disabled={loading} style={{ marginTop: 10 }}/>
             </ScrollView>
         </ScreenWrapper>
-    );
+    )
 }

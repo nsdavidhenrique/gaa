@@ -1,11 +1,10 @@
-import React from 'react';
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, Text } from 'react-native'
 
-import { useTheme } from '../hooks/useTheme'
+import { useTheme }     from '../hooks/useTheme'
 import { commonStyles } from '../styles/commonStyles'
 
 export const CustomButton = ({ title, onPress, style, disabled }) => {
-    const theme = useTheme();
+    const theme  = useTheme()
     const styles = commonStyles(theme)
 
     return (
@@ -21,6 +20,6 @@ export const CustomButton = ({ title, onPress, style, disabled }) => {
         >
             <Text style={styles.buttonText}>{title}</Text>
         </Pressable>
-    );
+    )
 }
 

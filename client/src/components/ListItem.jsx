@@ -3,16 +3,16 @@ import {
     View,
     Text,
     StyleSheet
-} from 'react-native';
+} from 'react-native'
 
 import { useRouter }    from 'expo-router'
 import { useTheme }     from '../hooks/useTheme.js'
 import { isLate }       from '../utils/isLate'
-import { commonStyles } from '../styles/commonStyles';
+import { commonStyles } from '../styles/commonStyles'
 import { Status }       from './Status'
 
 export const ListItem = ({task}) => {
-    const router = useRouter();
+    const router = useRouter()
     const theme  = useTheme()
     const styles = commonStyles(theme)
 

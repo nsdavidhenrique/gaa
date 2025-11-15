@@ -2,18 +2,18 @@ import {
     Alert,
     Text,
     View,
-
     FlatList,
-} from 'react-native';
+} from 'react-native'
 
 import { ScreenWrapper } from '../../../components/ScreenWrapper'
 import { CustomButton }  from '../../../components/CustomButton'
+import { CustomPrompt }  from '../../../components/CustomPrompt'
 import { TaskDetail }    from '../../../components/TaskDetail'
 import { Comment }       from '../../../components/Comment'
 
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
-import { useState, useEffect } from 'react';
-import { useTheme }            from '../../../hooks/useTheme'     
+import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useState, useEffect }             from 'react'
+import { useTheme }                        from '../../../hooks/useTheme'     
 
 import { commonStyles } from '../../../styles/commonStyles'
 
@@ -21,14 +21,16 @@ import { Api } from '../../../services/api'
 
 
 export default function TaskDetailScreen() {
-    const theme = useTheme();
-    const styles = commonStyles(theme);
-    const router = useRouter();
+    const theme  = useTheme()
+    const styles = commonStyles(theme)
+    const router = useRouter()
 
-    const {id}                    = useLocalSearchParams();
+    const {id}                    = useLocalSearchParams()
     const [task, setTask]         = useState(null)
     const [comments, setComments] = useState([])
     const [loading, setLoading]   = useState(true)
+
+    const [commentPromptVisible, setCommentPromptVisible] = useState(false)
 
     const getTask = async () => {
         setLoading(true)
@@ -38,7 +40,7 @@ export default function TaskDetailScreen() {
             setLoading(false)
             return
         }
-        const json = await response.json();
+        const json = await response.json()
         setTask(json.data)
 
         setLoading(false)
@@ -52,7 +54,7 @@ export default function TaskDetailScreen() {
             setLoading(false)
             return
         }
-        const body = await response.json();
+        const body = await response.json()
         setComments(body.data)
 
         setLoading(false)
@@ -85,19 +87,6 @@ export default function TaskDetailScreen() {
         setLoading(false)
     }
 
-    const addCommentPrompt = () => {
-        setLoading(true)
-        Alert.prompt(
-            "Novo comentário",
-            "",
-            [
-                {text: "Cancelar" },
-                {text: "Adicionar", onPress: async (text) => {await addComment(text)}}
-            ]
-        )
-        setLoading(false)
-    }
-
     useEffect(() => {
         getTask()
         getComments()
@@ -109,8 +98,6 @@ export default function TaskDetailScreen() {
 
     return (
         <ScreenWrapper>
-            <Stack.Screen options={{ headerShown:false }}/>
-
             <View style={{
                 flex: 1,
                 marginHorizontal: 5,
@@ -141,8 +128,17 @@ export default function TaskDetailScreen() {
                 <CustomButton
                     style={{ marginBottom: 10 }}
                     title="Adicionar Comentário"
-                    onPress={() => addCommentPrompt()}
+                    onPress={() => setCommentPromptVisible(true)}
                     disabled={loading}
+                />
+                <CustomPrompt
+                    visible={commentPromptVisible}
+                    title="Novo Comentário"
+                    onCancel={() => setCommentPromptVisible(false)}
+                    onConfirm={async (text) => {
+                        await addComment(text)
+                        setCommentPromptVisible(false)
+                    }}
                 />
 
                 {task.status == "Pendente" &&
@@ -162,5 +158,5 @@ export default function TaskDetailScreen() {
                 />}
             </View>
         </ScreenWrapper>
-    );
+    )
 }
