@@ -6,7 +6,7 @@ import { useTheme }     from '../hooks/useTheme'
 import { commonStyles } from '../styles/commonStyles'
 
 export const ScreenWrapper = ({ children, style }) =>{
-    const theme = useTheme()
+    const theme  = useTheme()
     const styles = commonStyles(theme)
 
     return(

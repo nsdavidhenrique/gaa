@@ -2,15 +2,16 @@ import {
     Alert,
     Text,
     View,
-    TouchableOpacity,
-    ScrollView
+    ScrollView,
+    Switch,
 } from 'react-native'
 
 import { ScreenWrapper } from '../../../components/ScreenWrapper'
+import { MenuItem }      from '../../../components/MenuItem'
 import { CustomPrompt }  from '../../../components/CustomPrompt'
 
+import { useState, useEffect }  from 'react'
 import { useRouter } from 'expo-router'
-import { useState }  from 'react'
 import { useTheme }  from '../../../hooks/useTheme'
 
 import { commonStyles } from '../../../styles/commonStyles'
@@ -48,35 +49,10 @@ export default function Settings() {
         Alert.alert(`Senha do usuário ${name} resetada com sucesso.`)
     }
 
-    const MenuItem = ({ label, onPress, danger }) => (
-        <>
-            <TouchableOpacity
-                onPress={onPress}
-                activeOpacity={0.6}
-                style={{
-                    backgroundColor: theme.colors.card,
-                    paddingVertical: 12,
-                    paddingHorizontal: 16,
-                    borderRadius: 8,
-                    marginBottom: 6,
-                    borderWidth: 1,
-                    borderColor: theme.colors.borderColor,
-                }}
-            >
-                <Text style={{
-                    fontSize: 14,
-                    fontWeight: "500",
-                    color: theme.colors.textPrimary,
-                }}>
-                    {label}
-                </Text>
-            </TouchableOpacity>
-        </>
-    )
-
     return (
         <ScreenWrapper>
             <ScrollView contentContainerStyle={{ padding: 16 }}>
+
                 <MenuItem
                     label="Criar Usuário"
                     onPress={() => setNewUserPrompt(true)}

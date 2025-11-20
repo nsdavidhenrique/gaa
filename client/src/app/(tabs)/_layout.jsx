@@ -11,7 +11,12 @@ export default function TabLayout() {
                 tabBarShowLabel: true,
                 headerShown: false,
                 tabBarActiveTintColor: theme.colors.primary,
-                tabBarInactiveTintColor: theme.colors.textSecondary
+                tabBarInactiveTintColor: theme.colors.textSecondary,
+                tabBarStyle: {
+                    backgroundColor: theme.colors.surface,
+                    borderTopColor: theme.colors.borderColor,
+                    borderTopWidth: 1,
+                },
             }}
         >
 

@@ -12,7 +12,7 @@ import { commonStyles } from '../styles/commonStyles'
 
 export function CustomPrompt({ visible, title, onCancel, onConfirm }) {
     const [text, setText] = useState('')
-    const theme = useTheme()
+    const theme  = useTheme()
     const styles = commonStyles(theme)
 
     return (
